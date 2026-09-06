@@ -1,0 +1,13 @@
+{
+  "name": "company-zero",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check main.js && node --check engine.js && node --check product-v5.js && node --check platform/kernel.mjs && node --check api/brain.mjs && node --check api/runtime.mjs && node --check api/observe.mjs && node --check api/health.mjs && node --check api/organizations.mjs",
+    "test": "node tests/run.mjs && node tests/product.test.mjs && node tests/platform.test.mjs",
+    "benchmark": "node scripts/benchmark.mjs",
+    "verify": "npm run check && npm test && npm run benchmark"
+  }
+}
