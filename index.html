@@ -1,1 +1,36 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Company Zero</title><link rel="stylesheet" href="product-v5.css"></head><body><div class="shell"><aside><div class="brand"><i></i> COMPANY ZERO</div><small>ACTIVE COMPANY</small><button id="switch" class="switch"><span id="mark"></span><b id="cname"></b>⌄</button><div id="menu" class="menu hidden"></div><nav><button data-p="command" class="on">⌁ <span>Command</span></button><button data-p="work">▤ <span>Work</span></button><button data-p="org">⌘ <span>Organization</span></button><button data-p="experiments">◇ <span>Experiments</span><u id="badge">1</u></button><button data-p="caps">⌗ <span>Capabilities</span></button><button data-p="memory">◫ <span>Memory</span></button><button data-p="controls">⊙ <span>Controls</span></button></nav><div class="foot"><b><i></i> Runtime healthy</b><small>evidence-first execution</small><a href="evidence.html">Evidence console ↗</a></div></aside><main><header><code>COMPANY / <b id="env"></b></code><div><span class="live">● LIVE</span><button>DI</button></div></header><section id="page"></section></main></div><div id="toast"></div><script type="module" src="product-v5.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a0b0a">
+  <title>Company Zero — Outcome-defined autonomous organizations</title>
+  <meta name="description" content="Company Zero builds and improves an AI workforce around the outcome you give it.">
+  <link rel="stylesheet" href="system.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-row"><button class="brand" data-page="overview"><span class="zero">0</span><span>Company Zero</span></button><button class="nav-close" id="navClose">×</button></div>
+    <button class="company-switch" id="companySwitch"><span class="company-avatar" id="companyAvatar">0</span><span><small>ACTIVE COMPANY</small><strong id="companyName">No company yet</strong></span><span class="chev">⌄</span></button>
+    <nav id="nav"></nav>
+    <div class="sidebar-bottom">
+      <div class="runtime-row"><span class="runtime-dot" id="runtimeDot"></span><span><strong id="runtimeTitle">Checking runtime</strong><small id="runtimeSub">Inference not verified</small></span></div>
+      <div class="sidebar-meta"><span>Company Zero</span><span>v5.1</span></div>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <div class="breadcrumb"><span>Company Zero</span><b>/</b><strong id="crumb">Overview</strong></div>
+      <div class="top-actions"><span class="live-chip" id="liveChip"><i></i>Live</span><button class="ghost-btn" id="refresh">Refresh</button><button class="primary-btn" id="newCompany">＋ New company</button></div>
+    </header>
+    <section id="view"></section>
+  </main>
+</div>
+<div class="modal-backdrop" id="modalWrap" hidden><form class="modal" id="modal"></form></div>
+<div class="busy" id="busy" hidden><span></span></div>
+<div class="toast" id="toast"></div>
+<script type="module" src="system.js"></script>
+</body>
+</html>

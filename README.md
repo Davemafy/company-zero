@@ -1,21 +1,12 @@
 # Company Zero
 
-Connect capabilities. Define an outcome. Company Zero builds, operates,
-evaluates, and restructures the organization required to achieve it.
+**Connect capabilities. Define an outcome. Company Zero builds, operates, evaluates, and restructures the organization required to achieve it.**
 
 Company Zero optimizes the organization around agents rather than optimizing a single agent. A model may propose structure, but execution evidence and hard promotion gates decide whether the structure survives.
 
-## Run locally
-
-```bash
-npm install --global vercel
-vercel dev
-```
-
-Open `http://localhost:3000`. No package install is required because the project
-has no runtime dependencies.
-
 ## Product
+
+Open `/` after deployment.
 
 The product has seven connected surfaces:
 
@@ -27,6 +18,8 @@ The product has seven connected surfaces:
 - **Memory** — retained structural lessons and version history
 - **Controls** — autonomy boundaries, revision safety, and kill switch
 
+The production path has no built-in business domain. It accepts generic HTTP, MCP-manifest, and human-review providers and synthesizes from their capability semantics. Historical demo fixtures remain isolated under the legacy benchmark files and are not used by the product runtime.
+
 ## Core mechanism
 
 `outcome → organization → execution → evidence → diagnosis → challenger → shadow evaluation → promotion → memory`
@@ -35,15 +28,33 @@ The critical boundary is:
 
 > **The model proposes. The runtime proves. The governor promotes.**
 
-The same platform kernel ships three environments: Customer Support, Finance
-Operations, and Software Engineering. Each has its own outcome, constraints,
-capabilities, and organization.
+## Evidence
 
-## Evidence and verification
+The hackathon/evidence console is available at `/evidence.html`. It includes benchmark results, runtime traces, restructuring evidence, and the AO evidence ledger. AO session history must be genuine and is never fabricated by the application.
 
-The evidence console at `/evidence.html` contains benchmark results, runtime
-traces, restructuring evidence, and the AO evidence ledger. AO session history
-must be genuine and is never fabricated by the application.
+## Vercel
+
+This repository is Vercel-native. Production operation requires Supabase; the API deliberately returns `durable_storage_not_configured` instead of silently falling back to ephemeral server memory. Apply `db/schema.sql`, then configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+
+The Vercel API accepts and persists work. A separate durable worker claims it from Postgres, so the browser and submission request may disconnect immediately. See `docs/DURABLE_RUNTIME.md` and apply both SQL migrations before production use.
+
+The runtime provides:
+
+- operational product at `/`
+- Vercel functions under `/api`
+- provider status at `/api/health`
+- no Netlify configuration or compatibility layer
+
+Run locally with:
+
+```bash
+npm i -g vercel
+vercel dev
+```
+
+Optional TensorMux and Neatlogs variables are documented in `.env.example` and `docs/DEPLOYMENT.md`.
+
+## Verify
 
 ```bash
 npm run verify
@@ -51,23 +62,14 @@ npm run verify
 
 Verification covers syntax, adversarial mechanism checks, product lifecycle tests, all three environment adapters, capability discovery, shadow evaluation, promotion gates, stale-revision rejection, institutional memory, and the 220-case benchmark suite.
 
-## Repository map
+## Architecture
 
-| Path | Purpose |
-| --- | --- |
-| `index.html`, `product-v5.*` | Main browser product |
-| `evidence.html`, `main.js`, `styles.css` | Evidence console |
-| `engine.js`, `missions.js` | Organization engine and mission definitions |
-| `platform/`, `lib/` | Platform kernel, runtime, and observability |
-| `api/` | Vercel server functions |
-| `sdk/`, `product-api.mjs` | Programmatic interfaces |
-| `data/`, `reports/`, `scripts/` | Benchmark inputs, output, and runner |
-| `tests/` | Mechanism and product verification |
-| `docs/` | API, architecture, deployment, evaluation, and threat model |
-
-## Deployment
-
-The repository is Vercel-native: the product is served from `/`, the evidence
-console from `/evidence.html`, and server functions from `/api`. Optional
-TensorMux and Neatlogs settings are documented in `.env.example` and
-`docs/DEPLOYMENT.md`.
+- `platform/kernel.mjs` — product environment/capability/promotion kernel
+- `engine.js` — organization synthesis, diagnosis, governance, mutation validation
+- `lib/runtime-core.mjs` — authoritative reference execution/evaluation
+- `product-api.mjs` — programmatic lifecycle object
+- `api/` — Vercel server functions
+- `product-v5.js` — product client
+- `main.js` — evidence console client
+- `tests/` — mechanism and product verification
+- `reports/benchmark-report.json` — generated benchmark evidence

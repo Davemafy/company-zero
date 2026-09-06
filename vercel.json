@@ -2,12 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store" }
-      ]
-    }
-  ]
+  "rewrites": [{ "source": "/api/v1/:path*", "destination": "/api/v1?path=:path*" }],
+  "headers": [{"source":"/api/(.*)","headers":[{"key":"Cache-Control","value":"no-store"}]}]
 }
