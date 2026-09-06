@@ -2,35 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#0a0b0a">
-  <title>Company Zero — Outcome-defined autonomous organizations</title>
-  <meta name="description" content="Company Zero builds and improves an AI workforce around the outcome you give it.">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Company Zero</title>
+  <meta name="description" content="Build, operate, measure and improve outcome-defined companies.">
   <link rel="stylesheet" href="system.css">
 </head>
 <body>
-<div class="shell">
-  <aside class="sidebar" id="sidebar">
-    <div class="brand-row"><button class="brand" data-page="overview"><span class="zero">0</span><span>Company Zero</span></button><button class="nav-close" id="navClose">×</button></div>
-    <button class="company-switch" id="companySwitch"><span class="company-avatar" id="companyAvatar">0</span><span><small>ACTIVE COMPANY</small><strong id="companyName">No company yet</strong></span><span class="chev">⌄</span></button>
-    <nav id="nav"></nav>
-    <div class="sidebar-bottom">
-      <div class="runtime-row"><span class="runtime-dot" id="runtimeDot"></span><span><strong id="runtimeTitle">Checking runtime</strong><small id="runtimeSub">Inference not verified</small></span></div>
-      <div class="sidebar-meta"><span>Company Zero</span><span>v5.1</span></div>
+  <a class="skip-link" href="#view">Skip to content</a>
+  <div class="app">
+    <aside id="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#overview" aria-label="Company Zero overview"><span aria-hidden="true">0</span><strong>Company Zero</strong></a>
+      <nav id="nav"></nav>
+      <div class="side-utility"><button class="nav-item" data-page="controls">Settings</button><div class="runtime"><i aria-hidden="true"></i><div><b id="runtime">Checking system</b><small id="storage">—</small></div></div></div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <button id="mobile" class="icon-button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+        <button id="companyPicker" class="company-picker">No company selected</button>
+        <div class="top-actions"><span id="topStatus" class="status status-muted">Not configured</span><button class="button primary" id="create">Create company</button></div>
+      </header>
+      <main id="view" tabindex="-1"></main>
     </div>
-  </aside>
-  <main class="main">
-    <header class="topbar">
-      <button class="hamburger" id="hamburger">☰</button>
-      <div class="breadcrumb"><span>Company Zero</span><b>/</b><strong id="crumb">Overview</strong></div>
-      <div class="top-actions"><span class="live-chip" id="liveChip"><i></i>Live</span><button class="ghost-btn" id="refresh">Refresh</button><button class="primary-btn" id="newCompany">＋ New company</button></div>
-    </header>
-    <section id="view"></section>
-  </main>
-</div>
-<div class="modal-backdrop" id="modalWrap" hidden><form class="modal" id="modal"></form></div>
-<div class="busy" id="busy" hidden><span></span></div>
-<div class="toast" id="toast"></div>
-<script type="module" src="system.js"></script>
+  </div>
+  <nav class="bottom-nav" id="bottomNav" aria-label="Mobile navigation"></nav>
+  <dialog id="modal" aria-labelledby="modalTitle"><form method="dialog" id="form"></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="system.js"></script>
 </body>
 </html>
