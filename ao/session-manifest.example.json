@@ -1,0 +1,6 @@
+{
+  "sessions": [
+    {"id":"REPLACE_WITH_REAL_AO_SESSION_ID","name":"Mechanism audit","purpose":"Use AO to inspect the organization synthesis, evaluator separation, and mutation validator."}
+  ],
+  "notes":"Replace this example with actual AO session evidence. Do not submit example IDs."
+}
