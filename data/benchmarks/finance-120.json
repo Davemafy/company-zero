@@ -1,0 +1,1058 @@
+{
+  "name": "finance-control-benchmark",
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "BFIN-001",
+      "vendor": "Orbit Office",
+      "amount": 257,
+      "po": "PO-18",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-002",
+      "vendor": "Aster Labs",
+      "amount": 394,
+      "po": "PO-35",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-003",
+      "vendor": "Helix Data",
+      "amount": 531,
+      "po": "PO-52",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-004",
+      "vendor": "Kite Freight",
+      "amount": 668,
+      "po": "PO-69",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-005",
+      "vendor": "Beacon Cloud",
+      "amount": 805,
+      "po": "PO-86",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-006",
+      "vendor": "Pine Legal",
+      "amount": 942,
+      "po": "PO-6",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-007",
+      "vendor": "Kite Freight",
+      "amount": 668,
+      "po": "PO-69",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-004"
+      ]
+    },
+    {
+      "id": "BFIN-008",
+      "vendor": "Cedar Works",
+      "amount": 1216,
+      "po": "PO-40",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-009",
+      "vendor": "Nova Devices",
+      "amount": 1353,
+      "po": "PO-57",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-010",
+      "vendor": "Vertex Labs",
+      "amount": 1490,
+      "po": "PO-74",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-011",
+      "vendor": "Mosaic Freight",
+      "amount": 1627,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-012",
+      "vendor": "Northstar Systems",
+      "amount": 1764,
+      "po": "PO-11",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-013",
+      "vendor": "Orbit Office",
+      "amount": 201,
+      "po": "PO-28",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-014",
+      "vendor": "Helix Data",
+      "amount": 531,
+      "po": "PO-52",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-003"
+      ]
+    },
+    {
+      "id": "BFIN-015",
+      "vendor": "Helix Data",
+      "amount": 475,
+      "po": "PO-62",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-016",
+      "vendor": "Kite Freight",
+      "amount": 612,
+      "po": "PO-79",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-017",
+      "vendor": "Beacon Cloud",
+      "amount": 749,
+      "po": "PO-96",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 709,
+      "submittedTotal": 749
+    },
+    {
+      "id": "BFIN-018",
+      "vendor": "Pine Legal",
+      "amount": 886,
+      "po": "PO-16",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-019",
+      "vendor": "Atlas Hosting",
+      "amount": 1023,
+      "po": "PO-33",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-020",
+      "vendor": "Cedar Works",
+      "amount": 1160,
+      "po": "PO-50",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-021",
+      "vendor": "Kite Freight",
+      "amount": 668,
+      "po": "PO-69",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-004"
+      ]
+    },
+    {
+      "id": "BFIN-022",
+      "vendor": "Vertex Labs",
+      "amount": 1434,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-023",
+      "vendor": "Mosaic Freight",
+      "amount": 1571,
+      "po": "PO-4",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-024",
+      "vendor": "Northstar Systems",
+      "amount": 1708,
+      "po": "PO-21",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-025",
+      "vendor": "Orbit Office",
+      "amount": 145,
+      "po": "PO-38",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-026",
+      "vendor": "Aster Labs",
+      "amount": 282,
+      "po": "PO-55",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-027",
+      "vendor": "Helix Data",
+      "amount": 419,
+      "po": "PO-72",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-028",
+      "vendor": "Vertex Labs",
+      "amount": 1490,
+      "po": "PO-74",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-010"
+      ]
+    },
+    {
+      "id": "BFIN-029",
+      "vendor": "Beacon Cloud",
+      "amount": 693,
+      "po": "PO-9",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-030",
+      "vendor": "Pine Legal",
+      "amount": 830,
+      "po": "PO-26",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-031",
+      "vendor": "Atlas Hosting",
+      "amount": 967,
+      "po": "PO-43",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-032",
+      "vendor": "Cedar Works",
+      "amount": 1104,
+      "po": "PO-60",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-033",
+      "vendor": "Nova Devices",
+      "amount": 1241,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-034",
+      "vendor": "Vertex Labs",
+      "amount": 1378,
+      "po": "PO-94",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 1338,
+      "submittedTotal": 1378
+    },
+    {
+      "id": "BFIN-035",
+      "vendor": "Atlas Hosting",
+      "amount": 1023,
+      "po": "PO-33",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-019"
+      ]
+    },
+    {
+      "id": "BFIN-036",
+      "vendor": "Northstar Systems",
+      "amount": 1652,
+      "po": "PO-31",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-037",
+      "vendor": "Orbit Office",
+      "amount": 1789,
+      "po": "PO-48",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-038",
+      "vendor": "Aster Labs",
+      "amount": 226,
+      "po": "PO-65",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-039",
+      "vendor": "Helix Data",
+      "amount": 363,
+      "po": "PO-82",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-040",
+      "vendor": "Kite Freight",
+      "amount": 500,
+      "po": "PO-2",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-041",
+      "vendor": "Beacon Cloud",
+      "amount": 637,
+      "po": "PO-19",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-042",
+      "vendor": "Cedar Works",
+      "amount": 1160,
+      "po": "PO-50",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-020"
+      ]
+    },
+    {
+      "id": "BFIN-043",
+      "vendor": "Atlas Hosting",
+      "amount": 911,
+      "po": "PO-53",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-044",
+      "vendor": "Cedar Works",
+      "amount": 1048,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-045",
+      "vendor": "Nova Devices",
+      "amount": 1185,
+      "po": "PO-87",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-046",
+      "vendor": "Vertex Labs",
+      "amount": 1322,
+      "po": "PO-7",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-047",
+      "vendor": "Mosaic Freight",
+      "amount": 1459,
+      "po": "PO-24",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-048",
+      "vendor": "Northstar Systems",
+      "amount": 1596,
+      "po": "PO-41",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-049",
+      "vendor": "Mosaic Freight",
+      "amount": 1571,
+      "po": "PO-4",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-023"
+      ]
+    },
+    {
+      "id": "BFIN-050",
+      "vendor": "Aster Labs",
+      "amount": 170,
+      "po": "PO-75",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-051",
+      "vendor": "Helix Data",
+      "amount": 307,
+      "po": "PO-92",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 267,
+      "submittedTotal": 307
+    },
+    {
+      "id": "BFIN-052",
+      "vendor": "Kite Freight",
+      "amount": 444,
+      "po": "PO-12",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-053",
+      "vendor": "Beacon Cloud",
+      "amount": 581,
+      "po": "PO-29",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-054",
+      "vendor": "Pine Legal",
+      "amount": 718,
+      "po": "PO-46",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-055",
+      "vendor": "Atlas Hosting",
+      "amount": 855,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-056",
+      "vendor": "Orbit Office",
+      "amount": 1789,
+      "po": "PO-48",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-037"
+      ]
+    },
+    {
+      "id": "BFIN-057",
+      "vendor": "Nova Devices",
+      "amount": 1129,
+      "po": "PO-97",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-058",
+      "vendor": "Vertex Labs",
+      "amount": 1266,
+      "po": "PO-17",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-059",
+      "vendor": "Mosaic Freight",
+      "amount": 1403,
+      "po": "PO-34",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-060",
+      "vendor": "Northstar Systems",
+      "amount": 1540,
+      "po": "PO-51",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-061",
+      "vendor": "Orbit Office",
+      "amount": 1677,
+      "po": "PO-68",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-062",
+      "vendor": "Aster Labs",
+      "amount": 1814,
+      "po": "PO-85",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-063",
+      "vendor": "Atlas Hosting",
+      "amount": 967,
+      "po": "PO-43",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-031"
+      ]
+    },
+    {
+      "id": "BFIN-064",
+      "vendor": "Kite Freight",
+      "amount": 388,
+      "po": "PO-22",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-065",
+      "vendor": "Beacon Cloud",
+      "amount": 525,
+      "po": "PO-39",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-066",
+      "vendor": "Pine Legal",
+      "amount": 662,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-067",
+      "vendor": "Atlas Hosting",
+      "amount": 799,
+      "po": "PO-73",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-068",
+      "vendor": "Cedar Works",
+      "amount": 936,
+      "po": "PO-90",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 896,
+      "submittedTotal": 936
+    },
+    {
+      "id": "BFIN-069",
+      "vendor": "Nova Devices",
+      "amount": 1073,
+      "po": "PO-10",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-070",
+      "vendor": "Vertex Labs",
+      "amount": 1322,
+      "po": "PO-7",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-046"
+      ]
+    },
+    {
+      "id": "BFIN-071",
+      "vendor": "Mosaic Freight",
+      "amount": 1347,
+      "po": "PO-44",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-072",
+      "vendor": "Northstar Systems",
+      "amount": 1484,
+      "po": "PO-61",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-073",
+      "vendor": "Orbit Office",
+      "amount": 1621,
+      "po": "PO-78",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-074",
+      "vendor": "Aster Labs",
+      "amount": 1758,
+      "po": "PO-95",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-075",
+      "vendor": "Helix Data",
+      "amount": 195,
+      "po": "PO-15",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-076",
+      "vendor": "Kite Freight",
+      "amount": 332,
+      "po": "PO-32",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-077",
+      "vendor": "Beacon Cloud",
+      "amount": 469,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-078",
+      "vendor": "Pine Legal",
+      "amount": 606,
+      "po": "PO-66",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-079",
+      "vendor": "Atlas Hosting",
+      "amount": 743,
+      "po": "PO-83",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-080",
+      "vendor": "Cedar Works",
+      "amount": 880,
+      "po": "PO-3",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-081",
+      "vendor": "Nova Devices",
+      "amount": 1017,
+      "po": "PO-20",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-082",
+      "vendor": "Vertex Labs",
+      "amount": 1154,
+      "po": "PO-37",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-083",
+      "vendor": "Mosaic Freight",
+      "amount": 1291,
+      "po": "PO-54",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-084",
+      "vendor": "Atlas Hosting",
+      "amount": 911,
+      "po": "PO-53",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-043"
+      ]
+    },
+    {
+      "id": "BFIN-085",
+      "vendor": "Orbit Office",
+      "amount": 1565,
+      "po": "PO-88",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 1525,
+      "submittedTotal": 1565
+    },
+    {
+      "id": "BFIN-086",
+      "vendor": "Aster Labs",
+      "amount": 1702,
+      "po": "PO-8",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-087",
+      "vendor": "Helix Data",
+      "amount": 139,
+      "po": "PO-25",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-088",
+      "vendor": "Kite Freight",
+      "amount": 276,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-089",
+      "vendor": "Beacon Cloud",
+      "amount": 413,
+      "po": "PO-59",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-090",
+      "vendor": "Pine Legal",
+      "amount": 550,
+      "po": "PO-76",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-091",
+      "vendor": "Atlas Hosting",
+      "amount": 687,
+      "po": "PO-93",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-092",
+      "vendor": "Cedar Works",
+      "amount": 824,
+      "po": "PO-13",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-093",
+      "vendor": "Nova Devices",
+      "amount": 961,
+      "po": "PO-30",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-094",
+      "vendor": "Vertex Labs",
+      "amount": 1098,
+      "po": "PO-47",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-095",
+      "vendor": "Mosaic Freight",
+      "amount": 1235,
+      "po": "PO-64",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-096",
+      "vendor": "Northstar Systems",
+      "amount": 1372,
+      "po": "PO-81",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-097",
+      "vendor": "Orbit Office",
+      "amount": 1509,
+      "po": "PO-1",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-098",
+      "vendor": "Vertex Labs",
+      "amount": 1322,
+      "po": "PO-7",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-046"
+      ]
+    },
+    {
+      "id": "BFIN-099",
+      "vendor": "Helix Data",
+      "amount": 1783,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-100",
+      "vendor": "Kite Freight",
+      "amount": 220,
+      "po": "PO-52",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-101",
+      "vendor": "Beacon Cloud",
+      "amount": 357,
+      "po": "PO-69",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-102",
+      "vendor": "Pine Legal",
+      "amount": 494,
+      "po": "PO-86",
+      "expected": "reject",
+      "flags": [
+        "total_mismatch"
+      ],
+      "lineTotal": 454,
+      "submittedTotal": 494
+    },
+    {
+      "id": "BFIN-103",
+      "vendor": "Atlas Hosting",
+      "amount": 631,
+      "po": "PO-6",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-104",
+      "vendor": "Cedar Works",
+      "amount": 768,
+      "po": "PO-23",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-105",
+      "vendor": "Northstar Systems",
+      "amount": 1540,
+      "po": "PO-51",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-060"
+      ]
+    },
+    {
+      "id": "BFIN-106",
+      "vendor": "Vertex Labs",
+      "amount": 1042,
+      "po": "PO-57",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-107",
+      "vendor": "Mosaic Freight",
+      "amount": 1179,
+      "po": "PO-74",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-108",
+      "vendor": "Northstar Systems",
+      "amount": 1316,
+      "po": "PO-91",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-109",
+      "vendor": "Orbit Office",
+      "amount": 1453,
+      "po": "PO-11",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-110",
+      "vendor": "Aster Labs",
+      "amount": 1590,
+      "po": null,
+      "expected": "review",
+      "flags": [
+        "missing_po"
+      ]
+    },
+    {
+      "id": "BFIN-111",
+      "vendor": "Helix Data",
+      "amount": 1727,
+      "po": "PO-45",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-112",
+      "vendor": "Orbit Office",
+      "amount": 1677,
+      "po": "PO-68",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-061"
+      ]
+    },
+    {
+      "id": "BFIN-113",
+      "vendor": "Beacon Cloud",
+      "amount": 301,
+      "po": "PO-79",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-114",
+      "vendor": "Pine Legal",
+      "amount": 438,
+      "po": "PO-96",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-115",
+      "vendor": "Atlas Hosting",
+      "amount": 575,
+      "po": "PO-16",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-116",
+      "vendor": "Cedar Works",
+      "amount": 712,
+      "po": "PO-33",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-117",
+      "vendor": "Nova Devices",
+      "amount": 849,
+      "po": "PO-50",
+      "expected": "review",
+      "flags": [
+        "high_value_exception"
+      ]
+    },
+    {
+      "id": "BFIN-118",
+      "vendor": "Vertex Labs",
+      "amount": 986,
+      "po": "PO-67",
+      "expected": "approve",
+      "flags": []
+    },
+    {
+      "id": "BFIN-119",
+      "vendor": "Aster Labs",
+      "amount": 1814,
+      "po": "PO-85",
+      "expected": "reject",
+      "flags": [
+        "duplicate_of:BFIN-062"
+      ]
+    },
+    {
+      "id": "BFIN-120",
+      "vendor": "Northstar Systems",
+      "amount": 1260,
+      "po": "PO-4",
+      "expected": "approve",
+      "flags": []
+    }
+  ]
+}

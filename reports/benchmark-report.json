@@ -1,0 +1,174 @@
+{
+  "generatedAt": "2026-09-06T14:24:49.050Z",
+  "engine": "company-zero-v4",
+  "suites": [
+    {
+      "id": "bench-finance",
+      "cases": 120,
+      "before": {
+        "accuracy": 0.825,
+        "cost": 31.2,
+        "latency": 19.2,
+        "violations": [
+          "quality"
+        ]
+      },
+      "diagnosis": {
+        "failureMode": "capability_gap",
+        "confidence": 0.9,
+        "evidenceIds": [
+          "BFIN-007",
+          "BFIN-014",
+          "BFIN-017",
+          "BFIN-021",
+          "BFIN-028",
+          "BFIN-034",
+          "BFIN-035",
+          "BFIN-042",
+          "BFIN-049",
+          "BFIN-051",
+          "BFIN-056",
+          "BFIN-063",
+          "BFIN-068",
+          "BFIN-070",
+          "BFIN-084",
+          "BFIN-085",
+          "BFIN-098",
+          "BFIN-102",
+          "BFIN-105",
+          "BFIN-112",
+          "BFIN-119"
+        ],
+        "reason": "Repeated failures occur across cases because no stage compares the current invoice with previously processed invoices.",
+        "neededCapability": {
+          "name": "Cross-case Verifier",
+          "tool": "cross_case_index",
+          "purpose": "compare current work against prior cases",
+          "instructions": "Compare the current case with prior processed cases and surface exact matches or likely duplicates."
+        },
+        "source": "local-fallback"
+      },
+      "decision": {
+        "action": "restructure",
+        "reason": "Structural failures affect 18% of evaluated work and evidence confidence is 90%. The expected benefit justifies organizational change."
+      },
+      "candidates": [
+        {
+          "label": "Add Cross-case Verifier",
+          "accuracy": 0.95,
+          "cost": 42,
+          "latency": 24,
+          "hard": true,
+          "score": -126.6
+        },
+        {
+          "label": "Insert final Outcome Verifier",
+          "accuracy": 0.875,
+          "cost": 40.8,
+          "latency": 24,
+          "hard": false,
+          "score": -128.1
+        },
+        {
+          "label": "Add Risk Scorer",
+          "accuracy": 0.825,
+          "cost": 40.8,
+          "latency": 24,
+          "hard": false,
+          "score": -133.1
+        }
+      ],
+      "chosen": {
+        "label": "Add Cross-case Verifier",
+        "accuracy": 0.95,
+        "cost": 42,
+        "latency": 24
+      }
+    },
+    {
+      "id": "bench-support",
+      "cases": 100,
+      "before": {
+        "accuracy": 0.77,
+        "cost": 23,
+        "latency": 16,
+        "violations": [
+          "quality"
+        ]
+      },
+      "diagnosis": {
+        "failureMode": "capability_gap",
+        "confidence": 0.9,
+        "evidenceIds": [
+          "BSUP-004",
+          "BSUP-008",
+          "BSUP-012",
+          "BSUP-016",
+          "BSUP-020",
+          "BSUP-024",
+          "BSUP-028",
+          "BSUP-032",
+          "BSUP-040",
+          "BSUP-044",
+          "BSUP-048",
+          "BSUP-052",
+          "BSUP-056",
+          "BSUP-060",
+          "BSUP-064",
+          "BSUP-068",
+          "BSUP-076",
+          "BSUP-080",
+          "BSUP-084",
+          "BSUP-088",
+          "BSUP-092",
+          "BSUP-096",
+          "BSUP-100"
+        ],
+        "reason": "Failed support cases show personal data can reach an external reply without a redaction capability.",
+        "neededCapability": {
+          "name": "Privacy Guard",
+          "tool": "redaction",
+          "purpose": "remove personal data from external output",
+          "instructions": "Detect and redact personal or payment data before any external reply."
+        },
+        "source": "local-fallback"
+      },
+      "decision": {
+        "action": "restructure",
+        "reason": "Structural failures affect 23% of evaluated work and evidence confidence is 90%. The expected benefit justifies organizational change."
+      },
+      "candidates": [
+        {
+          "label": "Add Privacy Guard",
+          "accuracy": 1,
+          "cost": 30,
+          "latency": 20,
+          "hard": true,
+          "score": -60
+        },
+        {
+          "label": "Insert final Outcome Verifier",
+          "accuracy": 0.77,
+          "cost": 31,
+          "latency": 20,
+          "hard": false,
+          "score": -88
+        },
+        {
+          "label": "Add Risk Scorer",
+          "accuracy": 0.77,
+          "cost": 31,
+          "latency": 20,
+          "hard": false,
+          "score": -88
+        }
+      ],
+      "chosen": {
+        "label": "Add Privacy Guard",
+        "accuracy": 1,
+        "cost": 30,
+        "latency": 20
+      }
+    }
+  ]
+}

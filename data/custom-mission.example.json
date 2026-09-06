@@ -1,0 +1,16 @@
+{
+  "id": "judge-finance-001",
+  "title": "Process a new invoice batch under duplicate and integrity constraints",
+  "domain": "finance_ops",
+  "budget": 6.2,
+  "qualityFloor": 0.95,
+  "latencyCap": 9,
+  "constraints": ["human_review_for_exceptions", "verify_before_irreversible_action", "spend_within_budget"],
+  "tools": ["document_reader", "policy_lookup", "human_review", "payment_queue", "cross_case_index", "assertion_check", "risk_scoring"],
+  "workload": [
+    {"id":"J-1","vendor":"Cedar Cloud","amount":480,"po":"PO-5","expected":"approve","flags":[]},
+    {"id":"J-2","vendor":"Cedar Cloud","amount":480,"po":"PO-5","expected":"reject","flags":["duplicate_of:J-1"]},
+    {"id":"J-3","vendor":"Maple Freight","amount":910,"po":null,"expected":"review","flags":["missing_po"]},
+    {"id":"J-4","vendor":"Axiom Tools","amount":700,"po":"PO-9","lineTotal":650,"submittedTotal":700,"expected":"reject","flags":["total_mismatch"]}
+  ]
+}
