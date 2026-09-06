@@ -1,4 +1,9 @@
 import {WorkerService} from '../lib/worker-service.mjs';
-for(const key of ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY'])if(!process.env[key])throw Error(`${key}_required`);
-const worker=new WorkerService({workerId:process.env.WORKER_ID||`company-zero-${process.pid}`,leaseSeconds:Number(process.env.WORKER_LEASE_SECONDS||60)});let stopping=false;process.on('SIGTERM',()=>stopping=true);process.on('SIGINT',()=>stopping=true);
-while(!stopping){const result=await worker.tick();if(!result)await new Promise(r=>setTimeout(r,Number(process.env.WORKER_POLL_MS||1000)))}
+const worker=new WorkerService({workerId:process.env.WORKER_ID||'company-zero-worker',leaseSeconds:Number(process.env.WORKER_LEASE_SECONDS||60)});
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pollMs=Math.max(250,Number(process.env.WORKER_POLL_MS||1000));
+let failures=0;
+for(;;){
+  try{await worker.tick();failures=0;await sleep(pollMs)}
+  catch(error){failures++;const delay=Math.min(30000,1000*(2**Math.min(failures,5)));console.error('[worker] tick failed:',error?.stack||error?.message||error);await sleep(delay)}
+}
