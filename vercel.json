@@ -3,12 +3,5 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [{ "source": "/api/v1/:path*", "destination": "/api/v1?path=:path*" }],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store" }
-      ]
-    }
-  ]
+  "headers": [{"source":"/api/(.*)","headers":[{"key":"Cache-Control","value":"no-store"}]}]
 }
