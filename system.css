@@ -75,3 +75,16 @@ body.no-company .shell{display:block}body.no-company .sidebar,body.no-company .t
 @media(max-width:1100px){.operating-layout{grid-template-columns:268px minmax(0,1fr)}.stage-rail{padding-inline:20px}.outcome-hero{grid-template-columns:1fr}.decision-grid{grid-template-columns:1fr}.action-card{grid-column:auto;grid-template-columns:1fr}.approval-actions{justify-content:flex-start}.flow-strip b{font-size:8px}}
 @media(max-width:820px){.operating-layout{display:block}.stage-rail{padding:16px 18px}.operating-main{padding:26px 18px 0}.flow-strip{grid-template-columns:repeat(5,minmax(80px,1fr));overflow-x:auto}.conversation-dock{margin:20px -18px 0;padding:12px 18px 14px}.move-facts{grid-template-columns:1fr}.outcome-hero{gap:10px}.result-panel{min-height:0}.decision-card{padding:16px}}
 @media(max-width:560px){.flow-strip{display:flex}.flow-strip>div{min-width:118px}.outcome-copy h1{font-size:36px}.evidence-counts{display:grid;grid-template-columns:1fr}.action-card{gap:14px}.approval-actions{display:grid;grid-template-columns:1fr 1fr}.technical-disclosure>summary,.company-disclosure>summary{padding:13px}.conversation small{display:block;font-size:7px}}
+
+/* Specificity + invisible-scrollbar refinement */
+.result-panel.needs-context{border-color:#5a4f2e;background:linear-gradient(180deg,#15140f,#0f100d)}
+.result-panel.needs-context>small{color:var(--warn)}
+.grounding-copy{margin-bottom:12px}
+.grounding-list .need-row>span{color:var(--warn)}
+.grounding-list .need-row strong{color:#e5e8df}
+.finding-list .user-fact>span{color:#aab49f}
+.finding-list .grounded-fact>span{color:var(--lime)}
+
+/* Keep wheel/touch/keyboard scrolling, remove visible scrollbar chrome. */
+html,body,.stage-rail,.org-graph,.workflow,.invariant,.flow-strip{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar,.stage-rail::-webkit-scrollbar,.org-graph::-webkit-scrollbar,.workflow::-webkit-scrollbar,.invariant::-webkit-scrollbar,.flow-strip::-webkit-scrollbar{display:none;width:0;height:0}
