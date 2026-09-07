@@ -81,3 +81,8 @@ Verification covers syntax, durable runtime invariants, capability security, res
 ## Scrapy Cloud student-pack observation
 
 The preferred no-card web-observation path is now Scrapy Cloud. A deployable generic observer lives in `scrapy/`, while `lib/scrapy-cloud.mjs` integrates the Scrapy Cloud Jobs and Items APIs into Company Zero's generic capability/evidence pipeline. See `docs/SCRAPY_CLOUD.md`. The existing paid Zyte API adapter remains optional.
+
+
+### TensorMux timeout
+
+Set `TENSORMUX_TIMEOUT_MS=60000` on Vercel and Railway. The runtime clamps this to 5–180 seconds and defaults to 60 seconds.

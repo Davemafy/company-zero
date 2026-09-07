@@ -133,3 +133,8 @@ Neatlogs receives semantic children linked to persisted outcome contracts, world
 - `BLOCKED`: a required production dependency prevents execution.
 - `SKIPPED`: an optional integration was intentionally not invoked because configuration was absent.
 - `NOT PERFORMED`: no deployment or real-world operation was attempted.
+
+
+### TensorMux timeout
+
+Set `TENSORMUX_TIMEOUT_MS=60000` on Vercel and Railway. The runtime clamps this to 5–180 seconds and defaults to 60 seconds.

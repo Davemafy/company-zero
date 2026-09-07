@@ -62,3 +62,8 @@ Run `npm run verify` for the complete in-memory acceptance suite. Run `npm run t
 - `/api/v1/worker/tick` — authenticated worker tick
 
 Development-memory mode is useful for local acceptance tests only. Production requires the Postgres-backed store so queue, budget, uniqueness, promotion, approval, and revision invariants remain transactional across processes.
+
+
+### TensorMux timeout
+
+Set `TENSORMUX_TIMEOUT_MS=60000` on Vercel and Railway. The runtime clamps this to 5–180 seconds and defaults to 60 seconds.

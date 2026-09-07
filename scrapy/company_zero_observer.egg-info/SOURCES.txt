@@ -1,0 +1,10 @@
+setup.py
+company_zero_observer/__init__.py
+company_zero_observer/settings.py
+company_zero_observer.egg-info/PKG-INFO
+company_zero_observer.egg-info/SOURCES.txt
+company_zero_observer.egg-info/dependency_links.txt
+company_zero_observer.egg-info/entry_points.txt
+company_zero_observer.egg-info/top_level.txt
+company_zero_observer/spiders/__init__.py
+company_zero_observer/spiders/generic_observer.py
