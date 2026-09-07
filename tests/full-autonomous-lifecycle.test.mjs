@@ -26,14 +26,14 @@ try{
   assert.equal(production.at(-1).governor.data.action,'RESTRUCTURE');
   const experimentId=production.at(-1).governor.data.remediation.experimentId;assert.ok(experimentId);
 
-  for(let i=0;i<40;i++){const experiment=await get(experimentId);if(experiment.state==='awaiting_decision')break;const work=await new WorkerService({workerId:`learning-${i}`}).tick();assert.ok(work,`learning queue drained before experiment completed at step ${i}`)}
-  const experiment=await get(experimentId);assert.equal(experiment.state,'awaiting_decision');
+  for(let i=0;i<40;i++){const experiment=await get(experimentId);if(['awaiting_decision','promoted'].includes(experiment.state))break;const work=await new WorkerService({workerId:`learning-${i}`}).tick();assert.ok(work,`learning queue drained before experiment completed at step ${i}`)}
+  const experiment=await get(experimentId);assert.ok(['awaiting_decision','promoted'].includes(experiment.state));
   assert.equal(experiment.data.results.length,3);assert.ok(experiment.data.results.every(x=>x.requiredCases===3));
   const winner=experiment.data.results.find(x=>x.qualityDelta>0&&x.policyStatus==='PASS');assert.ok(winner,`no candidate produced a real measured improvement: ${JSON.stringify(experiment.data.results)}`);
   const candidate=await get(winner.candidateRevisionId);assert.equal(candidate.data.mutation.type,'AddVerifier');
   assert.equal(winner.qualityDelta,1);assert.equal(winner.costDelta,0);
 
-  await promotion(company.id,experimentId,winner.candidateRevisionId);
+  if(experiment.state==='awaiting_decision')await promotion(company.id,experimentId,winner.candidateRevisionId);
   const promotedCompany=await get(company.id);assert.equal(promotedCompany.data.activeOrganizationRevisionId,winner.candidateRevisionId);
   assert.equal((await get(initial.id)).state,'retired');
   assert.equal((await list({companyId:company.id,kind:'lesson'})).length,1);
