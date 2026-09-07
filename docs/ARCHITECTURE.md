@@ -1,23 +1,38 @@
 # Company Zero architecture
 
-Company Zero optimizes an organization, not a single prompt.
+Company Zero is a general operating interface built above the existing durable organization control plane.
 
-Mission contract -> Organization Brain -> executable organization -> Runtime -> independent evaluator -> evidence diagnosis -> Governor -> competing mutations -> same-workload reruns -> constitution gate -> promotion -> institutional memory.
+`natural-language outcome → goal contract → world model → strategy search/critique → strategy selection → organization revision → persisted operation plan → durable work → invocation evidence → external observations → independent verification → Governor`
 
-## Authority boundaries
+## Universal layer
 
-The model may propose organization structures, diagnoses, and mutations. It cannot create evidence IDs, execute hidden tools, set runtime costs, declare itself successful, or promote a candidate. Those are runtime-owned.
+- **Goal Compiler:** desired/current state, success criteria, constraints, budget, authority and unknowns.
+- **World Model:** entities, resources, systems, people, data, observable/controllable state, permissions and unknowns.
+- **Capability Discovery:** reads the existing registry; missing access becomes an explicit persisted blocker.
+- **Strategy Search:** compares multiple paths before an organization exists.
+- **Organization Synthesis:** receives the goal contract, world model, selected strategy and actual capability records.
+- **Outcome Verification:** keeps execution success separate from world change and requires grounded observations.
+- **Governor:** classifies execution, strategy, organization and capability failures, plus an achieved outcome.
 
-## Runtime
+These concepts use `cz_records`, sharing the canonical optimistic concurrency, audit and Postgres durability model rather than introducing a second datastore.
 
-Each organization is a sequence of specialized roles backed by executable tools. Every case generates stage-level inputs/outputs, tool cost, latency, final decision, and pass/fail evidence. `/api/runtime` is the deployment execution path.
+## Authority boundary
 
-Reference mode is deterministic for demo reliability. Live mode keeps the tool runtime authoritative and asks TensorMux to audit the resulting trace. This makes model use visible without allowing the model to rewrite evaluation outcomes.
+**The model proposes. The runtime executes. The evaluator judges. The Governor promotes.**
 
-## Restructuring
+TensorMux is the canonical production model gateway for contracts, strategies, organization proposals, operation plans, diagnosis, conversation interpretation and replanning. It cannot invoke capabilities, create evidence, declare an outcome achieved, settle budget or promote. The invocation journal, approval checkpoint, queue, transactional budget functions and atomic promotion RPC remain authoritative.
 
-A diagnosis must cite only failed evidence IDs produced by the current run. Mutations must be grounded in those diagnosis IDs and use only tools available to the mission. Every valid candidate is compiled into a real organization and rerun on the same workload. The Governor promotes only a candidate satisfying quality, budget, and latency constraints.
+## Production topology
 
-## Continuous change
+- **Vercel:** browser and asynchronous API.
+- **Supabase/PostgreSQL:** records, queue, leases, invocations, approvals, evidence, experiments, budgets and atomic promotion.
+- **Persistent worker host:** one long-running Node worker process with no authoritative local state. Railway is the current production deployment target; the runtime remains vendor-neutral.
+- **TensorMux:** model proposals only.
+- **Zyte:** bounded generic public-web observation.
+- **Neatlogs:** semantic reasoning and runtime traces.
 
-The finance demo has two distinct failure regimes. The initial organization lacks cross-case comparison. After that is fixed, changed operating conditions introduce invoice-total integrity failures. Company Zero keeps the existing organization, diagnoses the new failure, and must restructure a second time.
+See `docs/PRODUCTION_INFRASTRUCTURE.md` for deployment and honest readiness status.
+
+## Failure honesty
+
+No capability means `awaiting_capabilities`, not a demo result. A successful HTTP response means execution succeeded, not that the mission succeeded. Outcome success requires an observation bound to the target metric. Ambiguous or unavailable evidence yields `insufficient_observation`.

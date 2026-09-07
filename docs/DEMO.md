@@ -4,7 +4,7 @@
 
 0:20 Show operating contract: mission, quality floor, budget, latency, available tools.
 
-0:35 Run finance. Show generated organization and 70% initial result.
+0:35 Submit an arbitrary outcome. Show the persisted outcome contract, claim provenance, strategy score, synthesized revision, and durable job. Do not show a percentage unless two external, trace-linked observations support it.
 
 1:00 Open a failed duplicate case and inspect the raw role/tool trace. Show that the evaluator reports observed evidence, not “add duplicate detector.”
 

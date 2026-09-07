@@ -1,0 +1,18 @@
+{
+  "name":"Company Zero Worker",
+  "description":"Persistent worker only; the UI/API remains on Vercel and durable state remains in Supabase.",
+  "formation":{"worker":{"quantity":1}},
+  "env":{
+    "SUPABASE_URL":{"description":"Supabase project URL","required":true},
+    "SUPABASE_SERVICE_ROLE_KEY":{"description":"Server-only Supabase service role key","required":true},
+    "TENSORMUX_BASE_URL":{"description":"OpenAI-compatible TensorMux endpoint","required":true},
+    "TENSORMUX_API_KEY":{"description":"TensorMux API key","required":true},
+    "TENSORMUX_MODEL":{"description":"Canonical reasoning model","required":true},
+    "NEATLOGS_WRITE_KEY":{"description":"Optional Neatlogs ingest-only key","required":false},
+    "NEATLOGS_PROJECT":{"description":"Neatlogs project identifier","required":false},
+    "ZYTE_API_KEY":{"description":"Optional Zyte API key for public-web observation","required":false},
+    "WORKER_LEASE_SECONDS":{"description":"Queue lease duration","value":"60"},
+    "WORKER_POLL_MS":{"description":"Idle polling interval","value":"1000"},
+    "WORKER_MAX_BACKOFF_MS":{"description":"Maximum transient-failure backoff","value":"30000"}
+  }
+}

@@ -6,7 +6,7 @@ The browser product is `/app.html`. It is intentionally separate from the hackat
 Command, Work, Organization, Experiments, Capabilities, Memory, Controls.
 
 ## Generality proof
-Customer Support, Finance Operations, and Software Engineering are three environment configurations using the same platform kernel. Each has a different outcome, capability allowlist, initial organization, incident, and discovered structural capability need.
+This document is historical evaluation material, not a product taxonomy. Any named scenarios are independent fixtures used to test the same universal kernel. Production contains no business-domain modes, templates, or intent branches; every session is compiled from its own goal, context, capabilities, constraints, and evidence.
 
 ## Structural improvement
 An incident opens a shadow experiment against the current production revision. The challenger handles 1,000 shadow cases. Promotion requires the configured evidence floor, zero policy violations, positive quality delta, acceptable economics, and a non-stale baseline revision.

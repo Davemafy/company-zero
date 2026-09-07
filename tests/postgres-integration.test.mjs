@@ -33,6 +33,10 @@ try{
   await query("update cz_queue set lease_expires_at=now()-interval '1 second' where id=$1",[claimed.id]);
   const recovered=await query('select * from cz_claim_work($1,$2)',['recovery-worker',30]);assert.equal(recovered.rows[0].id,claimed.id);
 
+  // Worker liveness is durable and visible across connections.
+  await query("insert into cz_worker_heartbeats(worker_id,version,current_queue_id,metadata) values($1,$2,$3,$4) on conflict(worker_id) do update set version=excluded.version,current_queue_id=excluded.current_queue_id,metadata=excluded.metadata,heartbeat_at=now()",['integration-worker','3.2',claimed.id,{status:'working'}]);
+  const heartbeatReader=await pool.connect();try{await setPath(heartbeatReader);const heartbeat=await heartbeatReader.query('select * from cz_worker_heartbeats where worker_id=$1',['integration-worker']);assert.equal(heartbeat.rows[0].current_queue_id,claimed.id);assert.equal(heartbeat.rows[0].metadata.status,'working')}finally{heartbeatReader.release()}
+
   // Active remediation uniqueness.
   const remediationCompany=randomUUID(),revisionId=randomUUID(),signature='metric:contract';
   const remediations=await Promise.all([query('select cz_begin_remediation($1,$2,$3,$4) value',[remediationCompany,revisionId,signature,{}]),query('select cz_begin_remediation($1,$2,$3,$4) value',[remediationCompany,revisionId,signature,{}])]);
@@ -83,6 +87,18 @@ try{
   const staleCandidate=randomUUID(),staleExperiment=randomUUID();await record({id:staleCandidate,companyId:promotionCompany,kind:'candidate_revision',state:'candidate',data:{revision:4,status:'candidate'}});
   await record({id:staleExperiment,companyId:promotionCompany,kind:'experiment',state:'awaiting_decision',data:{baselineRevisionId:baseId,candidateRevisionIds:[staleCandidate],results:[{candidateRevisionId:staleCandidate,cases:3,minCases:3,qualityDelta:.2,costDelta:-.1,uncertainCases:0,policyStatus:'PASS',constitutionPassed:true}]}});
   await assert.rejects(()=>query('select cz_promote_candidate($1,$2,$3)',[promotionCompany,staleExperiment,staleCandidate]),/stale_experiment_baseline/);
+
+  // Universal operating state and provenance survive process/connection boundaries.
+  const universalCompany=randomUUID(),sessionId=randomUUID(),contractId=randomUUID(),factId=randomUUID(),strategyId=randomUUID(),planId=randomUUID(),observationId=randomUUID(),externalObservationId=randomUUID();
+  await record({id:universalCompany,companyId:universalCompany,kind:'company',data:{status:'active',missionVersion:1}});
+  await record({id:sessionId,companyId:universalCompany,kind:'operating_session',state:'operating',data:{goal:'Arbitrary outcome',currentStage:'producing_progress'}});
+  await record({id:contractId,companyId:universalCompany,kind:'outcome_contract',state:'proposed',data:{sessionId,desiredState:'Arbitrary outcome',successCriteria:[{metricId:'metric_x',target:5}]}});
+  await record({id:factId,companyId:universalCompany,kind:'world_fact',state:'observed',data:{sessionId,classification:'EXTERNAL_OBSERVATION',sourceType:'capability',sourceRef:'trace-x',evidenceIds:['trace-x']}});
+  await record({id:strategyId,companyId:universalCompany,kind:'strategy_selection',state:'selected',data:{sessionId,evidenceRefs:[factId],score:{total:.8}}});
+  await record({id:planId,companyId:universalCompany,kind:'operation_plan',state:'validated',data:{sessionId,strategySelectionId:strategyId,operations:[{capabilityId:randomUUID(),args:{}}]}});
+  await record({id:observationId,companyId:universalCompany,kind:'outcome_observation',state:'observed',data:{sessionId,classification:'EXTERNAL_OBSERVATION',metrics:{metric_x:3},evidenceIds:['trace-x']}});
+  await record({id:externalObservationId,companyId:universalCompany,kind:'external_observation',state:'observed',data:{sessionId,provider:'zyte',requestedUrl:'https://example.com/',observedAt:new Date().toISOString(),invocationId:randomUUID(),evidenceId:'trace-x',classification:'EXTERNAL_OBSERVATION'}});
+  const restartReader=await pool.connect();try{await setPath(restartReader);const persisted=await restartReader.query("select kind,data from cz_records where company_id=$1 and kind in('operating_session','outcome_contract','world_fact','strategy_selection','operation_plan','outcome_observation','external_observation')",[universalCompany]);assert.equal(persisted.rowCount,7);assert.equal(persisted.rows.find(x=>x.kind==='world_fact').data.classification,'EXTERNAL_OBSERVATION');assert.equal(persisted.rows.find(x=>x.kind==='external_observation').data.provider,'zyte');assert.equal(persisted.rows.find(x=>x.kind==='operating_session').data.currentStage,'producing_progress')}finally{restartReader.release()}
 
   console.log('integration: PASS');
 }finally{

@@ -1,0 +1,14 @@
+BOT_NAME = "company_zero_observer"
+SPIDER_MODULES = ["company_zero_observer.spiders"]
+NEWSPIDER_MODULE = "company_zero_observer.spiders"
+ROBOTSTXT_OBEY = True
+USER_AGENT = "CompanyZeroObserver/1.0 (+bounded public-web observation)"
+DOWNLOAD_TIMEOUT = 15
+RETRY_TIMES = 1
+CONCURRENT_REQUESTS = 4
+CONCURRENT_REQUESTS_PER_DOMAIN = 2
+DOWNLOAD_DELAY = 0.25
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 0.25
+AUTOTHROTTLE_MAX_DELAY = 5
+LOG_LEVEL = "INFO"

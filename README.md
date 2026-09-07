@@ -1,16 +1,16 @@
 # Company Zero
 
-**Connect capabilities. Define an outcome. Company Zero builds, operates, evaluates, and restructures the organization required to achieve it.**
+**Say what you want to happen. Company Zero chooses a strategy, builds the organization required, operates through real capabilities, and measures whether the world actually changed.**
 
 Company Zero optimizes the organization around agents rather than optimizing a single agent. A model may propose structure, but execution evidence and hard promotion gates decide whether the structure survives.
 
 ## Product
 
-Open `/` after deployment.
+Open `/` after deployment. The first screen is the universal natural-language outcome composer—not infrastructure setup.
 
-The product has seven connected surfaces:
+The primary hierarchy is Outcome → Current work → Company. The existing control plane remains as advanced inspection:
 
-- **Command** — outcome, economics, incident, and organization health
+- **Outcome** — target, grounded progress, current strategy, blockers and conversation
 - **Work** — persistent operating ledger
 - **Organization** — promoted executable structure and constitution
 - **Experiments** — incumbent vs shadow challenger evaluation
@@ -18,15 +18,15 @@ The product has seven connected surfaces:
 - **Memory** — retained structural lessons and version history
 - **Controls** — autonomy boundaries, revision safety, and kill switch
 
-The production path has no built-in business domain. It accepts generic HTTP, MCP-manifest, and human-review providers and synthesizes from their capability semantics. Historical demo fixtures remain isolated under the legacy benchmark files and are not used by the product runtime.
+The production path has no built-in business domain or intent taxonomy. It accepts generic HTTP, MCP-manifest, and human-review providers and synthesizes from their capability semantics. HTTP providers may expose a real `/.well-known/company-zero-capabilities` manifest. Missing access produces `awaiting_capabilities`; unsafe input mapping produces `awaiting_operation_plan`; neither condition creates simulated work.
 
 ## Core mechanism
 
-`outcome → organization → execution → evidence → diagnosis → challenger → shadow evaluation → promotion → memory`
+`outcome → world model → strategies → organization → execution → outcome observation → diagnosis → challengers → same-workload evaluation → promotion → memory`
 
 The critical boundary is:
 
-> **The model proposes. The runtime proves. The governor promotes.**
+> **The model proposes. The runtime executes. The evaluator judges. The Governor promotes.**
 
 ## Evidence
 
@@ -52,7 +52,9 @@ npm i -g vercel
 vercel dev
 ```
 
-Optional TensorMux and Neatlogs variables are documented in `.env.example` and `docs/DEPLOYMENT.md`.
+Production worker, TensorMux, Zyte and Neatlogs setup is documented in `.env.example` and `docs/PRODUCTION_INFRASTRUCTURE.md`.
+
+The evidence boundary, provenance classes, outcome rules, and live-test limitations are documented in `docs/LEGITIMACY.md`.
 
 ## Verify
 
@@ -60,16 +62,22 @@ Optional TensorMux and Neatlogs variables are documented in `.env.example` and `
 npm run verify
 ```
 
-Verification covers syntax, adversarial mechanism checks, product lifecycle tests, all three environment adapters, capability discovery, shadow evaluation, promotion gates, stale-revision rejection, institutional memory, and the 220-case benchmark suite.
+Verification covers syntax, durable runtime invariants, capability security, resumable approval, transactional budget, concurrent experiment work, atomic promotion, the autonomous learning lifecycle, arbitrary-goal compilation, honest capability blocking, outcome verification, conversational corrections, portable persistent-worker lifecycle, and bounded Zyte provenance.
 
 ## Architecture
 
-- `platform/kernel.mjs` — product environment/capability/promotion kernel
-- `engine.js` — organization synthesis, diagnosis, governance, mutation validation
-- `lib/runtime-core.mjs` — authoritative reference execution/evaluation
-- `product-api.mjs` — programmatic lifecycle object
-- `api/` — Vercel server functions
-- `product-v5.js` — product client
-- `main.js` — evidence console client
-- `tests/` — mechanism and product verification
-- `reports/benchmark-report.json` — generated benchmark evidence
+- `lib/universal.mjs` — goal, world, strategy, session and conversation orchestration
+- `lib/outcome-verifier.mjs` — independent mission-level change verification
+- `lib/platform-v1.mjs` — canonical organization and execution engine
+- `lib/queue.mjs`, `lib/control-plane.mjs` — durable work, leases, budget and promotion authority
+- `lib/worker-runtime.mjs`, `worker/runner.mjs` — vendor-neutral persistent worker lifecycle (Railway is the current production host; `Procfile` remains optional portability support)
+- `lib/zyte.mjs` — bounded generic external web observation adapter
+- `lib/governor-service.mjs`, `lib/experiment-service.mjs` — evidence-driven restructuring
+- `api/v1.mjs` — universal and control-plane API
+- `system.js`, `system.css` — progressive operating interface
+- `tests/` — mechanism, lifecycle and universality verification
+
+
+## Scrapy Cloud student-pack observation
+
+The preferred no-card web-observation path is now Scrapy Cloud. A deployable generic observer lives in `scrapy/`, while `lib/scrapy-cloud.mjs` integrates the Scrapy Cloud Jobs and Items APIs into Company Zero's generic capability/evidence pipeline. See `docs/SCRAPY_CLOUD.md`. The existing paid Zyte API adapter remains optional.
