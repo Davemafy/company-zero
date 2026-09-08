@@ -13,8 +13,6 @@ const sessionId=()=>operating?.session?.id;
 const currentRec=k=>rec(k).filter(x=>!sessionId()||!x.data?.sessionId||x.data.sessionId===sessionId());
 const simpleValue=v=>{if(v==null)return '—';if(typeof v==='number'||typeof v==='boolean')return String(v);if(typeof v==='string')return v.length>120?`${v.slice(0,117)}…`:v;if(Array.isArray(v))return `${v.length} item${v.length===1?'':'s'}`;if(typeof v==='object')return v.title||v.name||v.text||`${Object.keys(v).length} fields`;return String(v)};
 const sentence=s=>String(s||'').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
-const compactText=(s,n=72)=>{const x=String(s||'').replace(/\s+/g,' ').trim();return x.length>n?`${x.slice(0,n-1).trim()}…`:x};
-const visibleArtifactStage=id=>!['understanding_goal','equipping','building_company'].includes(String(id||''));
 const humanStatus=({achieved,verification,request,approvals,job,strategy})=>{if(achieved)return{key:'achieved',eyebrow:'VERIFIED RESULT',title:'Target achieved',detail:'Company Zero has a grounded after-observation for the mission target.'};if(verification?.data?.results?.some(x=>x.after!==undefined))return{key:'measured',eyebrow:'MEASURED RESULT',title:'Result measured',detail:'A grounded after-observation is available, but the target has not been verified as achieved.'};if(request)return{key:'needs-access',eyebrow:'NEEDS ACCESS',title:"I found a direction, but I can’t execute it yet.",detail:'A real capability is still required before Company Zero can honestly act and verify the outcome.'};if(approvals.length)return{key:'approval',eyebrow:'READY FOR APPROVAL',title:'The next move is waiting for you.',detail:'Sensitive work is paused before the side effect.'};if(['running','claimed','queued'].includes(job?.state))return{key:'executing',eyebrow:'IN PROGRESS',title:'Executing the approved plan',detail:'The runtime is carrying out persisted work and will measure the result afterward.'};if(strategy)return{key:'move-ready',eyebrow:'BEST MOVE SELECTED',title:strategy.data.title,detail:'Company Zero has selected the strongest current path from the evidence, capabilities, risk and measurability available.'};return{key:'investigating',eyebrow:'INVESTIGATING',title:'Checking what can actually move this outcome',detail:'Company Zero is grounding the mission before it claims a result.'}};
 
 function organism(mode='exploring',label=''){
@@ -47,12 +45,10 @@ function workEvents(){
   const out=[];
   const artifacts=operating?.artifacts||[];
   for(const a of artifacts){
-    if(!visibleArtifactStage(a.data?.stage))continue;
     for(const item of (a.data?.items||[])){
       const title=item.label||item.title||item.type||a.data?.title;
       const detail=item.detail||'';
       if(!title)continue;
-      if(/constraints? parsed|unresolved unknowns?|goal contract/i.test(String(title)))continue;
       out.push({kind:a.data?.stage||'runtime',title,detail,time:a.created_at,state:a.state,claim:item.claimType||'RUNTIME_STATE',refs:item.sourceRefs||[],before:item.before,after:item.after,target:item.target});
     }
   }
@@ -151,26 +147,9 @@ function outcomeStatus(){const goal=mission()?.data?.goalContract,verification=l
 
 function composer(){return `<div class="conversation-dock"><form class="conversation" id="conversation"><textarea name="message" rows="1" placeholder="Correct the goal, change a constraint, ask why, or tell Company Zero to stop…"></textarea><button aria-label="Send">↑</button><small>Tell Company Zero what changed. The original evidence remains intact.</small></form></div>`}
 
-function activityRail(){
-  const all=workEvents();
-  const events=[];
-  const seen=new Set();
-  for(const e of all.slice().reverse()){
-    const key=`${e.kind}|${compactText(e.title,54)}`;
-    if(seen.has(key))continue;
-    seen.add(key);events.push(e);
-    if(events.length===7)break;
-  }
-  events.reverse();
-  const icons={decision:'↳',organization:'⌘',boundary:'×',approval:'↗',result:'✓',evolution:'↻',learning_world:'⌁',finding_paths:'⌕',choosing_strategy:'↳',starting_operations:'→',producing_progress:'+'};
-  return `<aside class="activity-rail"><div class="rail-head"><small>WORK LOG</small><strong>${events.length?`${events.length} meaningful update${events.length===1?'':'s'}`:'Getting started'}</strong></div><div class="rail-events">${events.length?events.map(e=>`<article class="rail-event ${esc(e.kind)}"><span>${icons[e.kind]||'·'}</span><div><strong title="${esc(e.title)}">${esc(compactText(e.title,62))}</strong>${e.time?`<small>${esc(fmt(e.time))}</small>`:''}</div></article>`).join(''):`<div class="rail-empty">Grounded updates will appear here.</div>`}</div><button class="rail-inspect" data-page="evidence">Inspect evidence →</button></aside>`
-}
-function contextRail(){
-  const n=runtimeNarrative(),request=currentRec('capability_access_request').find(x=>x.state==='open')||rec('capability_access_request').find(x=>x.state==='open'),approval=currentRec('approval_request').find(x=>['pending','waiting'].includes(x.state)),org=production(),roles=org?.data?.roles||[];
-  if(request)return `<aside class="context-rail"><div class="context-organism">${organism('waiting')}</div><div class="context-block boundary-context primary-boundary"><small>ACCESS BOUNDARY</small><h3>The next real move needs access.</h3><p>${esc(compactText(request.data?.message||request.data?.reason||request.data?.description||'Execution is paused at a real boundary.',210))}</p><button class="primary-btn" data-provider>Connect capability</button></div>${org?`<div class="context-block company-context"><small>COMPANY READY</small><h3>${roles.length} function${roles.length===1?'':'s'} · revision ${org.data?.revision||'—'}</h3><button class="quiet-action" data-page="company">Inspect company →</button></div>`:''}</aside>`;
-  return `<aside class="context-rail"><div class="context-organism">${organism(n.mode)}</div><div class="context-block primary-context"><small>${esc(n.phase)}</small><h3>${esc(n.title)}</h3><p>${esc(n.detail)}</p></div>${approval?`<div class="context-block boundary-context"><small>YOUR DECISION</small><h3>Approve the next side effect?</h3><p>${esc(approval.data?.reason||approval.data?.risk||'Sensitive work is waiting.')}</p><div class="approval-actions"><button class="ghost-btn" data-approval="${approval.id}" data-decision="rejected">Reject</button><button class="primary-btn" data-approval="${approval.id}" data-decision="approved">Approve</button></div></div>`:''}${org?`<div class="context-block company-context"><small>COMPANY ASSEMBLED</small><h3>${roles.length} function${roles.length===1?'':'s'} · revision ${org.data?.revision||'—'}</h3><p>${roles.slice(0,3).map(r=>r.name).join(' · ')}</p><button class="quiet-action" data-page="company">Inspect company →</button></div>`:''}</aside>`
-}
-function outcome(){const n=runtimeNarrative(),events=workEvents(),request=currentRec('capability_access_request').find(x=>x.state==='open')||rec('capability_access_request').find(x=>x.state==='open');const statusTitle=request?'I reached the first real-world boundary.':n.title;const statusDetail=request?'Everything before this point is still useful. Execution pauses here until the required capability is connected.':n.detail;return `<section class="motion-run"><header class="run-head"><button class="run-brand" data-page="outcome"><span class="zero">0</span><span>Company Zero</span></button>${compactProgress()}<div class="run-head-actions"><button class="quiet-head" id="refreshInline">Refresh</button><button class="quiet-head" id="newOutcomeInline">New outcome</button></div></header><div class="run-workspace">${activityRail()}<main class="run-stage"><div class="run-intro"><span class="run-eyebrow">YOUR OUTCOME</span><h1>${esc(mission()?.data?.goalContract?.desiredState||mission()?.data?.outcome||operating?.session?.data?.goal)}</h1></div><section class="living-status">${organism(request?'waiting':n.mode)}<div><h2>${esc(statusTitle)}</h2><p>${esc(statusDetail)}</p></div></section>${evolutionHero()}<section class="workstream"><div class="stream-label"><span>Live work</span><small>Facts, decisions, actions and measured consequences — not internal chatter.</small></div><div class="stream-line"></div>${events.length?events.map(eventCard).join(''):`<div class="stream-empty">${organism('exploring')}<p>The first grounded update will appear here.</p></div>`}</section>${deliverablesPanel()}${evidenceReceipts()}${artifactsView()}<details class="company-disclosure"><summary><span><b>Runtime details</b><small>Organization, provenance and control-plane state</small></span><i>＋</i></summary><section class="company-preview">${companyPanel()}</section></details>${composer()}</main>${contextRail()}</div></section>`}
+function activityRail(){const events=workEvents().slice(-10);return `<aside class="activity-rail"><div class="rail-head"><small>WORK LOG</small><strong>${events.length?`${events.length} useful update${events.length===1?'':'s'}`:'Getting started'}</strong></div><div class="rail-events">${events.length?events.map((e,i)=>`<article class="rail-event ${esc(e.kind)}"><span>${({decision:'↳',organization:'⌘',boundary:'×',approval:'↗',result:'✓',evolution:'↻',learning_world:'⌁',finding_paths:'⌕',choosing_strategy:'↳',building_company:'⌘',equipping:'◇',starting_operations:'→',producing_progress:'+'}[e.kind]||'·')}</span><div><strong>${esc(e.title)}</strong>${e.time?`<small>${esc(fmt(e.time))}</small>`:''}</div></article>`).join(''):`<div class="rail-empty">Useful updates will appear here as the run moves.</div>`}</div><button class="rail-inspect" data-page="evidence">Inspect evidence →</button></aside>`}
+function contextRail(){const n=runtimeNarrative(),request=currentRec('capability_access_request').find(x=>x.state==='open')||rec('capability_access_request').find(x=>x.state==='open'),approval=currentRec('approval_request').find(x=>['pending','waiting'].includes(x.state)),org=production(),roles=org?.data?.roles||[];return `<aside class="context-rail"><div class="context-organism">${organism(n.mode)}</div><div class="context-block primary-context"><small>${esc(n.phase)}</small><h3>${esc(n.title)}</h3><p>${esc(n.detail)}</p></div>${request?`<div class="context-block boundary-context"><small>NEEDS ACCESS</small><h3>The next real move needs a capability.</h3><p>${esc(request.data?.message||request.data?.reason||'Execution is paused at a real boundary.')}</p><button class="primary-btn" data-provider>Connect capability</button></div>`:''}${approval?`<div class="context-block boundary-context"><small>YOUR DECISION</small><h3>Approve the next side effect?</h3><p>${esc(approval.data?.reason||approval.data?.risk||'Sensitive work is waiting.')}</p><div class="approval-actions"><button class="ghost-btn" data-approval="${approval.id}" data-decision="rejected">Reject</button><button class="primary-btn" data-approval="${approval.id}" data-decision="approved">Approve</button></div></div>`:''}${org?`<div class="context-block company-context"><small>COMPANY ASSEMBLED</small><h3>${roles.length} function${roles.length===1?'':'s'} · revision ${org.data?.revision||'—'}</h3><p>${roles.slice(0,3).map(r=>r.name).join(' · ')}</p><button class="quiet-action" data-page="company">Inspect company →</button></div>`:''}</aside>`}
+function outcome(){const n=runtimeNarrative(),events=workEvents();return `<section class="motion-run"><header class="run-head"><button class="run-brand" data-page="outcome"><span class="zero">0</span><span>Company Zero</span></button>${compactProgress()}<div class="run-head-actions"><button class="quiet-head" id="refreshInline">Refresh</button><button class="quiet-head" id="newOutcomeInline">New outcome</button></div></header><div class="run-workspace">${activityRail()}<main class="run-stage"><div class="run-intro"><span class="run-eyebrow">YOUR OUTCOME</span><h1>${esc(mission()?.data?.goalContract?.desiredState||mission()?.data?.outcome||operating?.session?.data?.goal)}</h1></div><section class="living-status">${organism(n.mode)}<div><h2>${esc(n.title)}</h2><p>${esc(n.detail)}</p></div></section>${evolutionHero()}<section class="workstream"><div class="stream-label"><span>Live work</span><small>Facts, decisions, actions and measured consequences — not internal chatter.</small></div><div class="stream-line"></div>${events.length?events.map(eventCard).join(''):`<div class="stream-empty">${organism('exploring')}<p>The first grounded update will appear here.</p></div>`}</section>${deliverablesPanel()}${evidenceReceipts()}${artifactsView()}<details class="company-disclosure"><summary><span><b>Runtime details</b><small>Organization, provenance and control-plane state</small></span><i>＋</i></summary><section class="company-preview">${companyPanel()}</section></details>${composer()}</main>${contextRail()}</div></section>`}
 function companyPanel(){const org=production(),roles=org?.data?.roles||[];return `<div class="section-title"><div><small>THE COMPANY IT BUILT</small><h2>${roles.length} functions operating under revision ${org?.data?.revision||'—'}</h2></div><button class="text-btn" data-page="company">Inspect organization →</button></div>${roles.length?`<div class="role-grid">${roles.map((r,i)=>`<article><span>${String(i+1).padStart(2,'0')}</span><strong>${esc(r.name)}</strong><p>${esc(r.purpose)}</p><small>${r.capabilityIds?.length||0} capabilities · ${money(r.budgetUsd)}</small></article>`).join('')}</div>`:empty('Organization not formed yet','Company Zero will only form the company after choosing a strategy and finding real capabilities.')}`}
 
 const head=(eye,title,desc,actions='')=>`<div class="page-head"><div><div class="kicker">${eye}</div><h1>${esc(title)}</h1><p>${esc(desc)}</p></div>${actions?`<div class="head-actions">${actions}</div>`:''}</div>`;
@@ -194,39 +173,5 @@ async function act(fn,message){if(!$('#busy').hidden)return;$('#busy').hidden=fa
 function toast(message,bad=false){const t=$('#toast');t.textContent=message;t.className=`toast${bad?' bad':''}`;t.style.display='block';setTimeout(()=>t.style.display='none',2800)}
 async function refresh(renderAfter=true){const all=await api('/companies');companies=all.items||[];if(active){company=await api(`/companies/${active}`);const s=rec('operating_session').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];operating=s?await api(`/companies/${active}/sessions/${s.id}`):null}if(renderAfter)render()}
 async function switcher(){await refresh(false);$('#modal').innerHTML=`<div class="modal-head"><div><small>OUTCOMES</small><h2>Your operating sessions</h2></div><button type="button" id="modalClose">×</button></div><div class="company-list">${companies.map(c=>`<button type="button" data-company="${c.id}"><span class="company-avatar">${esc(c.data.name?.[0]||'0')}</span><span><strong>${esc(c.data.name)}</strong><small>${esc(c.data.status)}</small></span><span>→</span></button>`).join('')}</div>`;$('#modalWrap').hidden=false;$('#modalClose').onclick=closeModal;document.querySelectorAll('[data-company]').forEach(b=>b.onclick=async()=>{active=b.dataset.company;localStorage.cz_active=active;closeModal();await refresh();page='outcome';location.hash=page})}
-async function hydrateActive(){
-  if(!active)return;
-  company=await api(`/companies/${active}`);
-  const s=rec('operating_session').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];
-  operating=s?await api(`/companies/${active}/sessions/${s.id}`):null;
-}
-async function load(){
-  const started=performance.now();
-  render();
-  const boot=$('#bootScreen'),bootStatus=$('#bootStatus');
-  if(bootStatus)bootStatus.textContent='Connecting to the control plane';
-  const [healthResult,companiesResult]=await Promise.allSettled([
-    fetch('/api/health',{cache:'no-store'}).then(r=>r.json()),
-    api('/companies')
-  ]);
-  if(healthResult.status==='fulfilled'){
-    health=healthResult.value;
-    $('#runtimeDot').classList.toggle('live',Boolean(health.ok));
-    $('#runtimeTitle').textContent=health.ok?'Runtime online':'Runtime unavailable';
-    $('#runtimeSub').textContent=health.tensormuxConfigured?'TensorMux configured':'Deterministic fallback';
-    $('#liveChip')?.classList.toggle('off',!health.ok);
-  }else $('#runtimeTitle').textContent='Runtime unavailable';
-  if(companiesResult.status==='fulfilled'){
-    companies=companiesResult.value.items||[];
-    if(active&&!companies.some(x=>x.id===active)){active='';localStorage.removeItem('cz_active')}
-  }else toast(humanError(companiesResult.reason),true);
-  if(active){
-    if(bootStatus)bootStatus.textContent='Restoring the latest outcome';
-    try{await hydrateActive()}catch(e){toast(humanError(e),true)}
-  }
-  render();
-  const wait=Math.max(0,650-(performance.now()-started));
-  await new Promise(r=>setTimeout(r,wait));
-  if(boot){boot.classList.add('boot-done');setTimeout(()=>boot.remove(),380)}
-}
+async function load(){try{health=await fetch('/api/health',{cache:'no-store'}).then(r=>r.json());$('#runtimeDot').classList.toggle('live',Boolean(health.ok));$('#runtimeTitle').textContent=health.ok?'Runtime online':'Runtime unavailable';$('#runtimeSub').textContent=health.tensormuxConfigured?'TensorMux configured':'Deterministic fallback';$('#liveChip')?.classList.toggle('off',!health.ok)}catch{$('#runtimeTitle').textContent='Runtime unavailable'}try{const all=await api('/companies');companies=all.items||[];if(active&&!companies.some(x=>x.id===active)){active='';localStorage.removeItem('cz_active')}if(active)await refresh(false)}catch(e){toast(humanError(e),true)}render()}
 $('#newCompany').onclick=()=>{active='';company=null;operating=null;localStorage.removeItem('cz_active');page='outcome';location.hash=page;render()};$('#companySwitch').onclick=switcher;$('#refresh').onclick=()=>refresh();$('#hamburger').onclick=()=>$('#sidebar').classList.add('open');$('#navClose').onclick=()=>$('#sidebar').classList.remove('open');$('#modalWrap').onmousedown=e=>{if(e.target===e.currentTarget)closeModal()};window.onhashchange=()=>{page=location.hash.slice(1)||'outcome';render()};setInterval(()=>{if(active&&!document.hidden)refresh().catch(()=>{})},5000);load();

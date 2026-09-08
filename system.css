@@ -140,32 +140,3 @@ body::-webkit-scrollbar,
 .receipt-strip{padding:18px 20px}.receipt-head{align-items:center;margin-bottom:12px}.receipt-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}.receipt-chip{appearance:none;text-align:left;min-width:150px;border:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.18);color:inherit;border-radius:13px;padding:11px 12px;cursor:pointer}.receipt-chip span,.receipt-chip small{display:block;font-size:9px;color:rgba(255,255,255,.42)}.receipt-chip b{display:block;font-size:12px;margin:5px 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(255,255,255,.78)}
 .evolution-hero{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:20px 22px;border-color:rgba(183,255,60,.18);background:linear-gradient(110deg,rgba(183,255,60,.065),rgba(255,255,255,.018) 50%,rgba(255,255,255,.01))}.evolution-mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#b7ff3c;color:#0a0a0a;font-size:20px;box-shadow:0 0 34px rgba(183,255,60,.12)}.evolution-copy p{max-width:650px;margin:7px 0 12px;color:rgba(255,255,255,.6);font-size:12px;line-height:1.55}.evolution-line{display:flex;align-items:center;gap:10px;font-size:11px;color:rgba(255,255,255,.43)}.evolution-line i{font-style:normal}.evolution-line strong{color:#b7ff3c;font-weight:600}
 @media(max-width:760px){.deliverables-grid{grid-template-columns:1fr}.evolution-hero{grid-template-columns:auto 1fr}.evolution-hero>.secondary-btn{grid-column:1/-1;width:100%}.deliverables-head,.receipt-head{align-items:flex-start;flex-direction:column}.receipt-head .quiet-action{align-self:flex-start}}
-
-/* Round 2: boot experience + de-cluttered outcome workspace ---------------- */
-.boot-screen{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#090a09;color:#eef1e9;transition:opacity .34s ease,visibility .34s ease}
-.boot-screen.boot-done{opacity:0;visibility:hidden;pointer-events:none}
-.boot-inner{width:min(360px,calc(100vw - 48px));display:grid;grid-template-columns:46px 1fr;gap:14px 16px;align-items:center}
-.boot-mark{width:46px;height:46px;border:1px solid #33402a;border-radius:13px;display:grid;place-items:center;background:#10140f;box-shadow:0 0 36px #d7ff6f0b}.boot-mark span{color:var(--lime);font:600 18px 'DM Mono',monospace}
-.boot-copy strong{display:block;font-size:14px;font-weight:600}.boot-copy small{display:block;margin-top:5px;font:8px 'DM Mono',monospace;color:#667061;letter-spacing:.04em}
-.boot-track{grid-column:1/-1;height:1px;background:#222821;overflow:hidden;position:relative}.boot-track i{position:absolute;inset:0 auto 0 0;width:42%;background:linear-gradient(90deg,transparent,var(--lime),transparent);animation:boot-scan 1.05s ease-in-out infinite}
-@keyframes boot-scan{0%{transform:translateX(-110%)}100%{transform:translateX(340%)}}
-
-/* Work log is navigation/context, not a second copy of the full transcript. */
-.rail-event strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:2.8em;overflow-wrap:anywhere}
-.rail-events{gap:0}.rail-event{min-height:52px}
-
-/* Let the center carry the story; side rails are support surfaces. */
-.run-workspace{grid-template-columns:220px minmax(560px,1fr) 258px}
-.run-stage{max-width:980px;padding-inline:38px}
-.context-rail{padding-inline:16px}.primary-boundary h3{font-size:14px}.primary-boundary .primary-btn{width:100%}
-
-/* Prevent an access boundary from visually shouting three times. */
-.work-event.boundary .event-body{background:#11120f;border-color:#343122}.work-event.boundary .event-body p{max-width:620px}
-
-/* Composer should feel attached to the work, not cover it. */
-.conversation-dock{position:sticky;bottom:0;margin-top:34px;padding-top:22px;background:linear-gradient(180deg,rgba(9,10,9,0),rgba(9,10,9,.96) 36%,#090a09 100%)}
-.conversation{box-shadow:0 12px 36px #0006}
-
-@media(max-width:1180px){.run-workspace{grid-template-columns:204px minmax(480px,1fr) 224px}.run-stage{padding-inline:28px}}
-@media(max-width:960px){.run-workspace{grid-template-columns:190px minmax(0,1fr)}.context-rail{display:none}.run-stage{padding-inline:24px}}
-@media(max-width:720px){.run-workspace{display:block}.activity-rail{padding-block:10px}.run-stage{padding-inline:18px}}
