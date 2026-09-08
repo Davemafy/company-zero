@@ -6,3 +6,4 @@ node_modules/
 .DS_Store
 *.log
 coverage/
+DESIGN_SYSTEM.md

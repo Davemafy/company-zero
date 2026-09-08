@@ -2,37 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#090b09">
-  <title>Company Zero — Outcome to evidence</title>
-  <meta name="description" content="State an outcome. Company Zero does the work and returns evidence.">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0a0c0a">
+  <title>Company Zero</title>
+  <meta name="description" content="Tell Company Zero what you need done. It gets to work and brings back results.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="system.css">
 </head>
 <body>
   <div class="boot-screen" id="bootScreen" aria-label="Starting Company Zero">
-    <div class="boot-inner">
-      <div class="boot-mark"><span>0</span></div>
-      <div class="boot-copy">
-        <strong>Company Zero</strong>
-        <small id="bootStatus">Preparing the operating system</small>
-      </div>
-      <div class="boot-track" aria-hidden="true"><i></i></div>
-    </div>
+    <div class="boot-lockup"><img class="boot-mark" src="assets/brand/company-zero-mark-small.png" alt=""><div><strong>Company Zero</strong><span id="bootStatus">Getting things ready</span></div></div>
+    <div class="boot-line"><i></i></div>
   </div>
-  <div class="shell" id="shell">
+
+  <div class="app" id="app">
     <aside class="sidebar" id="sidebar">
-      <div class="brand-row"><button class="brand" data-page="outcome"><span class="zero">0</span><span>Company Zero</span></button><button class="nav-close" id="navClose">×</button></div>
-      <button class="company-switch" id="companySwitch"><span class="company-avatar" id="companyAvatar">0</span><span><small>CURRENT OUTCOME</small><strong id="companyName">No outcome yet</strong></span><span class="chev">⌄</span></button>
-      <nav id="nav"></nav>
-      <div class="sidebar-bottom"><div class="runtime-row"><span class="runtime-dot" id="runtimeDot"></span><span><strong id="runtimeTitle">Checking runtime</strong><small id="runtimeSub">Control plane</small></span></div><div class="sidebar-meta"><span>Company Zero</span><span>v6 universal</span></div></div>
+      <div class="side-top">
+        <button class="brand" data-page="home" aria-label="Company Zero home"><img class="brand-mark" src="assets/brand/company-zero-mark-small.png" alt=""><span>Company Zero</span></button>
+        <button class="side-close" id="sideClose" aria-label="Close menu"><svg class="ui-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5 5 10 10M15 5 5 15"/></svg></button>
+      </div>
+      <button class="new-work" id="newWork"><span><svg class="ui-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 4v12M4 10h12"/></svg></span><span>New work</span></button>
+      <nav class="primary-nav" id="nav"></nav>
+      <div class="recent-wrap">
+        <div class="recent-head"><span>Recent</span><button id="showAllWork">View all</button></div>
+        <div class="recent-list" id="recentList"></div>
+      </div>
+      <div class="side-bottom">
+        <button class="side-link" data-page="settings"><span><svg class="ui-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="2.3"/><path d="M10 2.8v1.4M10 15.8v1.4M2.8 10h1.4M15.8 10h1.4M4.9 4.9l1 1M14.1 14.1l1 1M15.1 4.9l-1 1M5.9 14.1l-1 1"/></svg></span><span>Settings</span></button>
+        <button class="runtime-state" data-page="advanced"><span class="runtime-dot" id="runtimeDot"></span><span><strong id="runtimeTitle">Connecting</strong><small id="runtimeSub">Runtime</small></span></button>
+      </div>
     </aside>
+
     <main class="main">
-      <header class="topbar"><button class="hamburger" id="hamburger">☰</button><div class="breadcrumb"><span>Company Zero</span><b>/</b><strong id="crumb">Outcome</strong></div><div class="top-actions"><button class="ghost-btn" id="refresh">Refresh</button><button class="primary-btn" id="newCompany">＋ New outcome</button></div></header>
-      <section id="view"></section>
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Open menu"><svg class="ui-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg></button>
+        <div class="top-title" id="topTitle">Home</div>
+        <div class="top-actions"><button class="quiet-btn" id="refresh">Refresh</button><button class="avatar-btn" aria-label="Account">D</button></div>
+      </header>
+      <section class="view" id="view"></section>
     </main>
   </div>
+
   <div class="modal-backdrop" id="modalWrap" hidden><form class="modal" id="modal"></form></div>
-  <div class="busy" id="busy" hidden><span></span></div>
+  <div class="busy" id="busy" hidden></div>
   <div class="toast" id="toast"></div>
   <script type="module" src="system.js"></script>
 </body>
