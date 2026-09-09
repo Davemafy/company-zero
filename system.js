@@ -113,11 +113,26 @@ function home(){
 
 function updateRow(u){const icons={found:'branch',choice:'sparkle',team:'people',doing:'refresh',done:'check',result:'chart'};return `<article class="update-row"><span class="update-icon ${u.kind}">${icon(icons[u.kind]||'sparkle')}</span><div><strong>${esc(u.title)}</strong><p>${esc(compact(u.body,140))}</p></div><time>${esc(fmt(u.time))}</time></article>`}
 
+
+function deliverableSurface(){
+  const contracts=rec('deliverable_contract').sort((a,b)=>Number(b.data?.latestVersion||b.data?.version||0)-Number(a.data?.latestVersion||a.data?.version||0));
+  const contract=contracts[0];
+  const artifacts=rec('artifact').filter(x=>x.state==='ready').sort((a,b)=>Number(b.data?.deliverableVersion||1)-Number(a.data?.deliverableVersion||1)||String(b.created_at).localeCompare(String(a.created_at)));
+  const a=artifacts[0];
+  const version=Number(a?.data?.deliverableVersion||contract?.data?.latestVersion||1);
+  const title=contract?.data?.title?.replace(/ · V\d+$/,'')||goalText();
+  if(a){
+    const files=a.data?.files||[];
+    const history=artifacts.slice(1,4);
+    return `<section class="deliverable-card ready"><div class="deliverable-top"><div><span class="eyebrow">VERSION ${version} · READY</span><h2>${esc(a.data?.title||`${title} · V${version}`)}</h2><p>${esc(a.data?.summary||'Your usable version is ready.')}</p></div><span class="deliverable-check">${icon('check')}</span></div><div class="deliverable-files">${files.slice(0,8).map(f=>`<span>${icon('receipt')} ${esc(f.name)}${f.bytes?` <small>${esc(Math.max(1,Math.round(f.bytes/1024)))} KB</small>`:''}</span>`).join('')}</div><div class="deliverable-actions">${a.data?.type==='website'?`<a class="primary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}&mode=preview" target="_blank" rel="noopener">Open V${version}</a>`:''}<a class="secondary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}">Get V${version} files</a></div>${history.length?`<div class="version-history"><span class="eyebrow">EARLIER VERSIONS</span>${history.map(h=>`<a href="/api/artifact?id=${encodeURIComponent(h.id)}">V${Number(h.data?.deliverableVersion||1)} · ${esc(h.data?.title||'Deliverable')}</a>`).join('')}</div>`:''}</section>`;
+  }
+  return `<section class="deliverable-card"><div class="deliverable-top"><div><span class="eyebrow">VERSION 1 · BUILDING</span><h2>${esc(title)} · V1</h2><p>I’m turning your request into a concrete first version now. Low-risk ambiguity gets inferred; I only stop when your authority is actually needed.</p></div><div class="mini-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div></div><div class="deliverable-progress"><span class="live-line"></span><p>The first usable files will appear here as they are produced and persisted.</p></div></section>`;
+}
 function work(){
   const s=statusModel(),need=needsYou(),updates=meaningfulUpdates(),stage=userStage(),rows=resultRows();
   const goal=goalText();
   return `<div class="work-page"><header class="work-head"><div class="work-title"><button class="back-home" data-page="home" aria-label="Back to home">${icon('arrowLeft')}</button><div><span class="eyebrow">WORK</span><h1>${esc(goal)}</h1></div></div><div>${statusPill(s)}</div></header>
-  <div class="work-layout"><main class="work-main"><section class="now-card"><div class="now-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div><div><span class="eyebrow">RIGHT NOW</span><h2>${esc(stage[0])}</h2><p>${esc(stage[1])}</p></div></section>
+  <div class="work-layout"><main class="work-main">${deliverableSurface()}<section class="now-card"><div class="now-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div><div><span class="eyebrow">RIGHT NOW</span><h2>${esc(stage[0])}</h2><p>${esc(stage[1])}</p></div></section>
   ${need?needCard(need):''}
   <section class="stream"><div class="section-head"><div><span class="eyebrow">WORKING NOTES</span><h2>What’s happening</h2></div><span>${updates.length} updates</span></div>${updates.length?updates.map(updateRow).join(''):`<div class="soft-empty">I’m still getting the first useful update together.</div>`}</section>
   ${rows.length?`<section class="result-card"><div><span class="eyebrow">MEASURED RESULT</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'The target is met':'Here’s what changed'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${esc(r.after??'—')}</strong><small>${r.before!==undefined?`${esc(r.before)} before`:''}${r.target!==undefined?` · target ${esc(r.target)}`:''}</small></div>`).join('')}</div><button class="text-link" data-page="results">See the proof ${icon('arrowRight')}</button></section>`:''}
@@ -172,7 +187,7 @@ function bind(){
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page;location.hash=page;$('#sidebar').classList.remove('open');render()});
   document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{const ta=$('#goalForm textarea');if(ta){ta.value=b.dataset.example;ta.focus()}});
   document.querySelectorAll('[data-company]').forEach(b=>b.onclick=async()=>{active=b.dataset.company;localStorage.cz_active=active;await hydrateActive();page='work';location.hash=page;render()});
-  const gf=$('#goalForm');if(gf)gf.onsubmit=e=>{e.preventDefault();const goal=String(new FormData(e.target).get('goal')||'').trim();if(!goal)return;launchingGoal=goal;render();act(async()=>{operating=await api('/outcomes',{method:'POST',body:{goal}});company=operating.company;active=company.id;localStorage.cz_active=active;launchingGoal='';page='work';location.hash=page},'Work started')};
+  const gf=$('#goalForm');if(gf)gf.onsubmit=e=>{e.preventDefault();const goal=String(new FormData(e.target).get('goal')||'').trim();if(!goal)return;launchingGoal=goal;render();act(async()=>{operating=await api('/outcomes',{method:'POST',body:{goal,v1Mode:true}});company=operating.company;active=company.id;localStorage.cz_active=active;launchingGoal='';page='work';location.hash=page},'Work started')};
   const cf=$('#conversation');if(cf)cf.onsubmit=e=>{e.preventDefault();const message=String(new FormData(e.target).get('message')||'').trim();if(!message||!operating)return;act(async()=>{await api(`/companies/${active}/sessions/${operating.session.id}/messages`,{method:'POST',body:{message}});e.target.reset()},'Updated')};
   document.querySelectorAll('[data-provider]').forEach(b=>b.onclick=()=>openProvider());
   document.querySelectorAll('[data-control]').forEach(b=>b.onclick=()=>act(()=>api(`/companies/${active}/controls`,{method:'POST',body:{action:b.dataset.control}}),'Updated'));

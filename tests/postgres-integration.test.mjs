@@ -19,7 +19,7 @@ const record=async({id=randomUUID(),companyId,kind,state='active',data})=>{await
 try{
   await admin.query(`create schema ${quoted}`);
   await setPath(admin);
-  for(const file of ['db/schema.sql','db/002_durable_runtime.sql','db/003_control_plane.sql'])await admin.query(await readFile(new URL(`../${file}`,import.meta.url),'utf8'));
+  for(const file of ['db/schema.sql','db/002_durable_runtime.sql','db/003_control_plane.sql','db/004_outcome_control.sql','db/005_deliverable_artifacts.sql'])await admin.query(await readFile(new URL(`../${file}`,import.meta.url),'utf8'));
   pool=new Pool({connectionString:databaseUrl,max:16});
 
   // SKIP LOCKED claim, lease renewal, and expired-lease recovery.
@@ -87,6 +87,14 @@ try{
   const staleCandidate=randomUUID(),staleExperiment=randomUUID();await record({id:staleCandidate,companyId:promotionCompany,kind:'candidate_revision',state:'candidate',data:{revision:4,status:'candidate'}});
   await record({id:staleExperiment,companyId:promotionCompany,kind:'experiment',state:'awaiting_decision',data:{baselineRevisionId:baseId,candidateRevisionIds:[staleCandidate],results:[{candidateRevisionId:staleCandidate,cases:3,minCases:3,qualityDelta:.2,costDelta:-.1,uncertainCases:0,policyStatus:'PASS',constitutionPassed:true}]}});
   await assert.rejects(()=>query('select cz_promote_candidate($1,$2,$3)',[promotionCompany,staleExperiment,staleCandidate]),/stale_experiment_baseline/);
+
+  // Deliverable revision allocation is atomic and scoped by contract.
+  const deliverableCompany=randomUUID(),deliverableContract=randomUUID();
+  await record({id:deliverableContract,companyId:deliverableCompany,kind:'deliverable_contract',state:'building',data:{status:'building'}});
+  const reserves=await Promise.all([0,1].map(()=>query('select cz_reserve_deliverable_artifact_revision($1,$2,$3,$4,$5,$6,$7,$8,$9) value',[deliverableCompany,deliverableContract,null,null,'primary','website','Site','', 'integration'])));
+  const versions=reserves.map(x=>Number(x.rows[0].value.deliverableVersion)).sort((a,b)=>a-b);assert.deepEqual(versions,[1,2]);
+  assert.equal((await query('select count(*)::int n from cz_artifacts where company_id=$1 and deliverable_contract_id=$2 and artifact_key=$3',[deliverableCompany,deliverableContract,'primary'])).rows[0].n,1);
+  assert.equal((await query('select count(*)::int n from cz_deliverable_revisions where company_id=$1 and deliverable_contract_id=$2',[deliverableCompany,deliverableContract])).rows[0].n,2);
 
   // Universal operating state and provenance survive process/connection boundaries.
   const universalCompany=randomUUID(),sessionId=randomUUID(),contractId=randomUUID(),factId=randomUUID(),strategyId=randomUUID(),planId=randomUUID(),observationId=randomUUID(),externalObservationId=randomUUID();

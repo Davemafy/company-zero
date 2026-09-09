@@ -3,18 +3,22 @@ import {createCompany,companies,hydrateCompany,registerProvider,synthesize,launc
 import {scheduleExperiment} from '../lib/experiment-service.mjs';
 import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse} from '../lib/universal.mjs';
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
+import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
+import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
 
 export default async function handler(req,res){
   res.setHeader('content-type','application/json');
   try{
+    const browserSessionId=ensureBrowserSession(req,res);
     const body=req.method==='GET'?{}:await read(req),p=String(req.query?.path||'').split('/').filter(Boolean),m=req.method;
     if(m==='GET'&&!p.length)return send(res,200,{ok:true,storage:storageMode(),contract:'v1',execution:'external-durable-worker',interface:'universal-operating'});
     if(m==='GET'&&p[0]==='runtime'&&p[1]==='workers')return send(res,200,{items:await listWorkerHeartbeats()});
-    if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await startOperatingSession(body));
-    if(m==='GET'&&p[0]==='companies'&&p.length===1)return send(res,200,{items:await companies()});
-    if(m==='POST'&&p[0]==='companies'&&p.length===1)return send(res,201,await createCompany(body));
+    if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await startOperatingSession({...body,ownerSessionId:browserSessionId}));
+    if(m==='GET'&&p[0]==='companies'&&p.length===1){const items=(await companies()).filter(x=>canAccessCompany(x,browserSessionId));return send(res,200,{items});}
+    if(m==='POST'&&p[0]==='companies'&&p.length===1){const ownerSessionId=body.ownerSessionId||(process.env.NODE_ENV==='production'?browserSessionId:undefined);return send(res,201,await createCompany({...body,...(ownerSessionId?{ownerSessionId}: {})}));}
     const c=p[1];
-    if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,await hydrateCompany(await get(c)));
+    const company=(p[0]==='companies'&&c)?assertCompanyAccess(await get(c),browserSessionId):null;
+    if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,await hydrateCompany(company));
     if(m==='GET'&&p[2]==='sessions'&&p[3])return send(res,200,await hydrateOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='advance')return send(res,202,await advanceOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='messages')return send(res,201,await converse(c,p[3],body.message));
@@ -23,6 +27,10 @@ export default async function handler(req,res){
     if(m==='GET'&&p[2]==='organizations'&&p.length===3)return send(res,200,{items:(await list({companyId:c,limit:500})).filter(x=>['organization_revision','candidate_revision'].includes(x.kind))});
     if(m==='GET'&&p[2]==='experiments'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'experiment',limit:200})});
     if(m==='GET'&&p[2]==='world'&&p.length===3)return send(res,200,{items:(await list({companyId:c,limit:3000})).filter(x=>['world_model','world_fact','capability_assessment'].includes(x.kind))});
+    if(m==='GET'&&p[2]==='deliverables'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'deliverable',limit:1000})});
+    if(m==='GET'&&p[2]==='deliverable-graphs'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'deliverable_graph',limit:200})});
+    if(m==='GET'&&p[2]==='runtime-events'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'runtime_event',limit:1000})});
+    if(m==='GET'&&p[2]==='sessions'&&p[3]&&p[4]==='outcome-control')return send(res,200,await hydrateOutcomeControl(c,p[3]));
     if(m==='GET'&&p[2]==='outcome-contracts'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'outcome_contract',limit:200})});
     if(m==='GET'&&p[2]==='evidence'&&p.length===3)return send(res,200,{items:(await list({companyId:c,limit:3000})).filter(x=>['trace','evaluation','external_observation','outcome_observation','outcome_verification','world_fact','work_relevance','operation_plan','diagnosis','promotion_decision','lesson'].includes(x.kind))});
     if(m==='GET'&&p[2]==='memory'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'lesson',limit:200})});
