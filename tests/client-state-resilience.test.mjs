@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const src=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
+assert.match(src,/api\('\/interactions'/,'new input must pass through interaction router');
+assert.doesNotMatch(src,/if\(!message\|\|!operating\)return/,'composer must not silently discard messages when session hydration is missing');
+assert.match(src,/await hydrateActive\(\)/,'composer must attempt authoritative rehydration');
+assert.match(src,/Couldn’t send:/,'composer must surface send failures');
+assert.match(src,/setInterval\(\(\)=>\{if\(active&&page==='work'/,'active work must reconcile with persisted state automatically');
+assert.match(src,/companies=\[hydrated,\.\.\.companies\.filter/,'active hydrated work must be merged into recent work');
+assert.doesNotMatch(src,/company\?\.data\?\.name\|\|'Untitled work'/,'hydrated UI must not retain Untitled work fallback');
+console.log('client-state-resilience: PASS');

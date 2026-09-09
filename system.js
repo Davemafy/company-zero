@@ -24,7 +24,7 @@ const ICONS={
 const icon=(name,cls='')=>`<svg class="ui-icon ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" xmlns="http://www.w3.org/2000/svg">${ICONS[name]||ICONS.arrowRight}</svg>`;
 let page=(location.hash.slice(1)||'home');
 let active=localStorage.cz_active||'';
-let companies=[],company=null,operating=null,health=null,launchingGoal='';
+let companies=[],company=null,operating=null,health=null,launchingGoal='',directAnswer=null,sendingMessage=false,lastHydrationError='';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const compact=(s,n=92)=>{const x=String(s||'').replace(/\s+/g,' ').trim();return x.length>n?`${x.slice(0,n-1).trim()}…`:x};
@@ -36,7 +36,8 @@ const currentRec=k=>{const sid=operating?.session?.id;return rec(k).filter(x=>!s
 const latest=k=>rec(k).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];
 const mission=()=>rec('mission').find(x=>x.state==='active')||rec('mission')[0];
 const production=()=>rec('organization_revision').find(x=>x.state==='production');
-const goalText=()=>operating?.session?.data?.goal||mission()?.data?.goalContract?.desiredState||mission()?.data?.outcome||company?.data?.name||'Untitled work';
+const goalText=()=>operating?.session?.data?.goal||mission()?.data?.goalContract?.desiredState||mission()?.data?.outcome||company?.data?.name||'Loading work…';
+const displayCompanyName=c=>c?.data?.name||c?.records?.find?.(x=>x.kind==='operating_session')?.data?.goal||c?.records?.find?.(x=>x.kind==='mission')?.data?.outcome||'Loading work…';
 const sentence=s=>String(s||'').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
 const humanError=e=>sentence(String(e?.message||e||'Request failed'));
 
@@ -46,9 +47,14 @@ function statusModel(){
   const approval=currentRec('approval_request').find(x=>['pending','waiting'].includes(x.state));
   const jobs=rec('job');
   const job=jobs.find(x=>x.id===operating?.session?.data?.jobId)||jobs[0];
+  const progressRecords=(company?.records||[]).filter(x=>!operating?.session?.id||!x.data?.sessionId||x.data.sessionId===operating.session.id);
+  const lastProgress=progressRecords.map(x=>Date.parse(x.updated_at||x.created_at||0)).filter(Number.isFinite).sort((a,b)=>b-a)[0]||0;
+  const stale=lastProgress&&Date.now()-lastProgress>90000&&!verification?.data?.outcomeAchieved&&!approval&&!request&&!['failed','blocked','completed'].includes(job?.state);
   if(verification?.data?.outcomeAchieved)return {key:'done',label:'Done',tone:'good',detail:'The result has been verified.'};
   if(approval||request)return {key:'needs',label:'Needs you',tone:'warn',detail:'One step needs your access or approval.'};
   if(['failed','blocked'].includes(job?.state))return {key:'needs',label:'Needs you',tone:'warn',detail:'Work is paused at a real boundary.'};
+  if(lastHydrationError)return {key:'recovering',label:'Recovering',tone:'warn',detail:'The app is reconnecting to the persisted work state.'};
+  if(stale)return {key:'recovering',label:'Recovering',tone:'warn',detail:'No new persisted progress has appeared recently. The app is refreshing the durable state.'};
   return {key:'working',label:'Working',tone:'live',detail:'Company Zero is working on this now.'};
 }
 
@@ -93,14 +99,15 @@ function needsYou(){
 
 function resultRows(){
   const v=latest('outcome_verification');
-  return (v?.data?.results||[]).map(r=>({name:sentence(r.description||r.metricId||r.metric||'Result'),before:r.before,after:r.after,target:r.target,passed:r.passed,status:r.status}));
+  return (v?.data?.results||[]).map(r=>({name:sentence(r.description||r.metricId||r.metric||'Result'),before:r.before,after:r.after,target:r.target,passed:r.passed,status:r.status,hasObservation:r.after!==undefined&&r.after!==null&&r.after!==''}));
 }
 
 function promptBox({large=false}={}){return `<form class="prompt-box ${large?'large':''}" id="goalForm"><textarea name="goal" ${large?'autofocus':''} required placeholder="What do you need done?"></textarea><div class="prompt-foot"><span>${large?'Describe the result. Company Zero handles the setup.':'Be specific or just talk normally.'}</span><button aria-label="Start">${icon('arrowUp')}</button></div></form>`}
-function composer(){return `<div class="composer-wrap"><form class="composer" id="conversation"><textarea name="message" rows="1" placeholder="Tell Company Zero anything…"></textarea><button aria-label="Send">${icon('arrowUp')}</button></form></div>`}
+function composer(){return `<div class="composer-wrap"><form class="composer" id="conversation"><textarea name="message" rows="1" placeholder="Tell Company Zero anything…"></textarea><button aria-label="Send" ${sendingMessage?'disabled':''}>${sendingMessage?'…':icon('arrowUp')}</button></form></div>`}
 function statusPill(s){return `<span class="status-pill ${s.tone}"><i></i>${esc(s.label)}</span>`}
 
 function home(){
+  if(directAnswer)return `<div class="home-empty"><div class="hero-lockup"><img class="hero-organism" src="assets/brand/company-zero-mark.png" alt=""><div><span class="eyebrow">ANSWER</span><h1>${esc(directAnswer.question)}</h1><p>${esc(directAnswer.answer)}</p></div></div>${promptBox({large:true})}<div class="home-proof"><span>Answered directly</span><span>No unnecessary workflow created</span></div></div>`;
   if(!companies.length&&!company&&!launchingGoal)return `<div class="home-empty"><div class="hero-lockup"><img class="hero-organism" src="assets/brand/company-zero-mark.png" alt=""><div><span class="eyebrow">COMPANY ZERO</span><h1>What do you want done?</h1><p>Give me the outcome. I’ll work out the plan, do what I can, and show you what changed.</p></div></div>${promptBox({large:true})}<div class="starter-row">${['Find me 5 serious clients','Improve my website performance','Find sponsors for my event','Cut our cloud bill by 20%'].map(x=>`<button data-example="${esc(x)}">${esc(x)}<span>${icon('arrowRight')}</span></button>`).join('')}</div><div class="home-proof"><span>Works in the background</span><span>Stops before sensitive actions</span><span>Shows what actually changed</span></div></div>`;
   if(launchingGoal)return `<div class="launch-view"><div class="launch-organism"><img src="assets/brand/company-zero-mark.png" alt=""></div><span class="eyebrow">STARTING</span><h1>${esc(launchingGoal)}</h1><p>I’m getting the first useful version of this work moving now.</p></div>`;
   const s=statusModel(),need=needsYou(),updates=meaningfulUpdates(),rows=resultRows();
@@ -124,21 +131,40 @@ function deliverableSurface(){
   if(a){
     const files=a.data?.files||[];
     const history=artifacts.slice(1,4);
-    return `<section class="deliverable-card ready"><div class="deliverable-top"><div><span class="eyebrow">VERSION ${version} · READY</span><h2>${esc(a.data?.title||`${title} · V${version}`)}</h2><p>${esc(a.data?.summary||'Your usable version is ready.')}</p></div><span class="deliverable-check">${icon('check')}</span></div><div class="deliverable-files">${files.slice(0,8).map(f=>`<span>${icon('receipt')} ${esc(f.name)}${f.bytes?` <small>${esc(Math.max(1,Math.round(f.bytes/1024)))} KB</small>`:''}</span>`).join('')}</div><div class="deliverable-actions">${a.data?.type==='website'?`<a class="primary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}&mode=preview" target="_blank" rel="noopener">Open V${version}</a>`:''}<a class="secondary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}">Get V${version} files</a></div>${history.length?`<div class="version-history"><span class="eyebrow">EARLIER VERSIONS</span>${history.map(h=>`<a href="/api/artifact?id=${encodeURIComponent(h.id)}">V${Number(h.data?.deliverableVersion||1)} · ${esc(h.data?.title||'Deliverable')}</a>`).join('')}</div>`:''}</section>`;
+    return `<section class="deliverable-card ready"><div class="deliverable-top"><div><span class="eyebrow">VERSION ${version} · READY</span><h2>${esc(a.data?.title||`${title} · V${version}`)}</h2><p>${esc(a.data?.summary||'Your usable version is ready.')}</p></div><span class="deliverable-check">${icon('check')}</span></div><div class="deliverable-files">${files.slice(0,8).map(f=>`<span>${icon('receipt')} ${esc(f.name)}${f.bytes?` <small>${esc(Math.max(1,Math.round(f.bytes/1024)))} KB</small>`:''}</span>`).join('')}</div><div class="deliverable-actions"><a class="primary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}&mode=preview" target="_blank" rel="noopener">Open V${version}</a><a class="secondary-btn" href="/api/artifact?id=${encodeURIComponent(a.id)}">Get V${version} files</a></div>${history.length?`<div class="version-history"><span class="eyebrow">EARLIER VERSIONS</span>${history.map(h=>`<a href="/api/artifact?id=${encodeURIComponent(h.id)}">V${Number(h.data?.deliverableVersion||1)} · ${esc(h.data?.title||'Deliverable')}</a>`).join('')}</div>`:''}</section>`;
   }
+  if(contract?.state==='ready'||contract?.data?.status==='ready')return `<section class="deliverable-card"><div class="deliverable-top"><div><span class="eyebrow">DELIVERABLE UNAVAILABLE</span><h2>${esc(title)}</h2><p>A completed deliverable was expected, but no retrievable ready artifact is attached. Company Zero will not render an empty success state.</p></div><span class="deliverable-check">${icon('alert')}</span></div></section>`;
   return `<section class="deliverable-card"><div class="deliverable-top"><div><span class="eyebrow">VERSION 1 · BUILDING</span><h2>${esc(title)} · V1</h2><p>I’m turning your request into a concrete first version now. Low-risk ambiguity gets inferred; I only stop when your authority is actually needed.</p></div><div class="mini-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div></div><div class="deliverable-progress"><span class="live-line"></span><p>The first usable files will appear here as they are produced and persisted.</p></div></section>`;
+}
+function workProgress(){
+  const stages=['understanding_goal','learning_world','finding_paths','choosing_strategy','building_company','equipping','starting_operations','producing_progress'];
+  const labels=['Define the outcome','Ground the world','Find viable paths','Choose the move','Assemble the company','Bind capabilities','Start operations','Produce & verify'];
+  const current=operating?.session?.data?.currentStage||'understanding_goal';
+  const idx=Math.max(0,stages.indexOf(current));
+  return `<div class="execution-rail">${labels.map((label,i)=>`<div class="execution-step ${i<idx?'done':i===idx?'active':''}"><span>${i<idx?icon('check'):i===idx?'<i></i>':String(i+1).padStart(2,'0')}</span><strong>${esc(label)}</strong><small>${i<idx?'Complete':i===idx?'In progress':'Queued'}</small></div>`).join('')}</div>`;
+}
+function liveOutput(updates){
+  const external=currentRec('world_fact').filter(x=>x.data?.classification==='EXTERNAL_OBSERVATION');
+  const artifacts=rec('artifact').filter(x=>x.state==='ready');
+  const roles=production()?.data?.roles||[];
+  const count=external.length+artifacts.length;
+  return `<section class="live-output"><div class="live-output-head"><div><span class="eyebrow">LIVE OUTPUT</span><h2>${count?`${count} grounded output${count===1?'':'s'} captured`:'Work will appear here as it becomes real'}</h2></div><span class="signal"><i></i> LIVE</span></div>${updates.length?`<div class="signal-list">${updates.slice(0,4).map((u,i)=>`<article><span class="signal-index">${String(i+1).padStart(2,'0')}</span><div><strong>${esc(u.title)}</strong><p>${esc(compact(u.body,170))}</p></div><time>${esc(fmt(u.time))}</time></article>`).join('')}</div>`:`<div class="live-empty"><span class="live-beam"></span><div><strong>Waiting for the first persisted signal</strong><p>Only durable progress appears here. No theatre, no fake activity.</p></div></div>`}</section>`;
+}
+function companyStrip(){
+  const roles=production()?.data?.roles||[];
+  if(!roles.length)return `<section class="company-strip"><div><span class="eyebrow">COMPANY</span><strong>Lean by default</strong></div><p>Functions appear only when the work earns the complexity.</p></section>`;
+  return `<section class="company-strip"><div><span class="eyebrow">COMPANY</span><strong>${roles.length} active function${roles.length===1?'':'s'}</strong></div><div class="company-flow">${roles.slice(0,5).map((r,i)=>`${i?'<b>→</b>':''}<span>${esc(r.name)}</span>`).join('')}</div></section>`;
 }
 function work(){
   const s=statusModel(),need=needsYou(),updates=meaningfulUpdates(),stage=userStage(),rows=resultRows();
   const goal=goalText();
-  return `<div class="work-page"><header class="work-head"><div class="work-title"><button class="back-home" data-page="home" aria-label="Back to home">${icon('arrowLeft')}</button><div><span class="eyebrow">WORK</span><h1>${esc(goal)}</h1></div></div><div>${statusPill(s)}</div></header>
-  <div class="work-layout"><main class="work-main">${deliverableSurface()}<section class="now-card"><div class="now-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div><div><span class="eyebrow">RIGHT NOW</span><h2>${esc(stage[0])}</h2><p>${esc(stage[1])}</p></div></section>
-  ${need?needCard(need):''}
-  <section class="stream"><div class="section-head"><div><span class="eyebrow">WORKING NOTES</span><h2>What’s happening</h2></div><span>${updates.length} updates</span></div>${updates.length?updates.map(updateRow).join(''):`<div class="soft-empty">I’m still getting the first useful update together.</div>`}</section>
-  ${rows.length?`<section class="result-card"><div><span class="eyebrow">${latest('outcome_verification')?.data?.status==='insufficient_observation'?'OUTCOME STATUS':'MEASURED RESULT'}</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'The target is met':latest('outcome_verification')?.data?.status==='insufficient_observation'?'Not verified yet':'Here’s what changed'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${esc(r.after??'—')}</strong><small>${r.before!==undefined?`${esc(r.before)} before`:''}${r.target!==undefined?` · target ${esc(r.target)}`:''}</small></div>`).join('')}</div><button class="text-link" data-page="results">See the proof ${icon('arrowRight')}</button></section>`:''}
-  </main><aside class="work-side">${workSide()}</aside></div>${composer()}</div>`;
+  const evidence=currentRec('world_fact').filter(x=>x.data?.classification==='EXTERNAL_OBSERVATION').length;
+  const artifacts=rec('artifact').filter(x=>x.state==='ready').length;
+  return `<div class="work-page premium-work"><header class="work-command"><div class="command-title"><button class="back-home" data-page="home" aria-label="Back to home">${icon('arrowLeft')}</button><div><span class="eyebrow">ACTIVE MISSION</span><h1>${esc(goal)}</h1></div></div><div class="command-meta"><span>${artifacts} artifact${artifacts===1?'':'s'}</span><span>${evidence} receipt${evidence===1?'':'s'}</span>${statusPill(s)}</div></header>
+  <div class="mission-kpis"><div><span>NOW</span><strong>${esc(stage[0])}</strong></div><div><span>PROOF</span><strong>${evidence?`${evidence} grounded signal${evidence===1?'':'s'}`:'Awaiting evidence'}</strong></div><div><span>OUTPUT</span><strong>${artifacts?`${artifacts} ready`:'Building V1'}</strong></div></div>
+  <div class="mission-grid"><main class="mission-main">${need?needCard(need):''}${liveOutput(updates)}${deliverableSurface()}${rows.length?`<section class="result-card premium-result"><div><span class="eyebrow">${latest('outcome_verification')?.data?.outcomeAchieved?'VERIFIED OUTCOME':'OUTCOME STATUS'}</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'Target achieved':'Not verified yet'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${r.hasObservation?esc(r.after):'No grounded observation yet'}</strong><small>${r.target!==undefined?`Target ${esc(r.target)}`:'Evidence required'}</small></div>`).join('')}</div><button class="text-link" data-page="results">Open evidence ledger ${icon('arrowRight')}</button></section>`:''}</main>
+  <aside class="mission-aside"><section class="aside-panel"><div class="aside-head"><span class="eyebrow">EXECUTION</span><span>${esc(s.label)}</span></div>${workProgress()}</section>${companyStrip()}<section class="aside-panel compact-panel"><span class="eyebrow">OPERATING PRINCIPLE</span><p>${esc(compact((currentRec('strategy_selection').find(x=>x.state==='selected')||{}).data?.rationale||'Move toward the outcome with measurable, reversible actions and evidence at every claim.',220))}</p></section></aside></div>${composer()}</div>`;
 }
-
 function needCard(n){if(n.type==='approval')return `<section class="need-card"><div class="need-mark">${icon('alert')}</div><div><span class="eyebrow">WAITING ON YOU</span><h2>${esc(n.title)}</h2><p>${esc(n.body)}</p><div class="need-actions"><button class="secondary-btn" data-approval="${n.id}" data-decision="rejected">Not now</button><button class="primary-btn" data-approval="${n.id}" data-decision="approved">Approve</button></div></div></section>`;return `<section class="need-card"><div class="need-mark">${icon('alert')}</div><div><span class="eyebrow">WAITING ON YOU</span><h2>${esc(n.title)}</h2><p>${esc(n.body)}</p><button class="primary-btn" data-provider>Connect what’s needed</button></div></section>`}
 
 function workSide(){
@@ -152,7 +178,7 @@ function workSide(){
 function results(){
   const rows=resultRows();
   const evidence=company?.records?.filter(x=>['external_observation','outcome_observation','outcome_verification','world_fact','promotion_decision'].includes(x.kind)).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))||[];
-  return `<div class="page-shell"><header class="page-head"><div><span class="eyebrow">RESULTS</span><h1>What actually changed</h1><p>Measured outcomes and the receipts behind them.</p></div></header>${rows.length?`<section class="results-hero">${rows.map(r=>`<article><span>${esc(r.name)}</span><div class="big-result"><strong>${esc(r.after??'—')}</strong>${r.before!==undefined?`<small>from ${esc(r.before)}</small>`:''}</div>${r.target!==undefined?`<p>Target ${esc(r.target)}</p>`:''}</article>`).join('')}</section>`:`<div class="large-empty"><h2>No measured result yet</h2><p>When Company Zero can verify a real-world change, it will land here first.</p></div>`}
+  return `<div class="page-shell"><header class="page-head"><div><span class="eyebrow">RESULTS</span><h1>What actually changed</h1><p>Measured outcomes and the receipts behind them.</p></div></header>${rows.length?`<section class="results-hero">${rows.map(r=>`<article><span>${esc(r.name)}</span><div class="big-result"><strong>${r.hasObservation?esc(r.after):'Not verified'}</strong>${r.before!==undefined&&r.before!==null?`<small>from ${esc(r.before)}</small>`:''}</div>${r.target!==undefined?`<p>Target ${esc(r.target)}</p>`:''}</article>`).join('')}</section>`:`<div class="large-empty"><h2>No measured result yet</h2><p>When Company Zero can verify a real-world change, it will land here first.</p></div>`}
   <section class="proof-section"><div class="section-head"><div><span class="eyebrow">PROOF</span><h2>Receipts</h2></div></div><div class="receipt-list">${evidence.length?evidence.slice(0,14).map(e=>`<article><span class="receipt-icon">${icon('receipt')}</span><div><strong>${esc(receiptTitle(e))}</strong><p>${esc(receiptBody(e))}</p></div><time>${esc(fmt(e.created_at))}</time></article>`).join(''):`<div class="soft-empty">No external receipt has been recorded yet.</div>`}</div></section></div>`;
 }
 function receiptTitle(e){if(e.kind==='outcome_verification')return 'Result verification';if(e.kind==='external_observation')return 'External observation';if(e.kind==='promotion_decision')return 'Approach changed';return sentence(e.kind)}
@@ -173,7 +199,7 @@ const views={home,work,results,connections,settings,advanced};
 
 function nav(){
   $('#nav').innerHTML=NAV.map(([id,label,ic])=>`<button class="${page===id?'active':''}" data-page="${id}"><span class="nav-icon">${icon(ic)}</span><b>${label}</b>${id==='work'&&company?`<i class="nav-status ${statusModel().tone}"></i>`:''}</button>`).join('');
-  $('#recentList').innerHTML=companies.slice(0,4).map(c=>`<button class="${c.id===active?'active':''}" data-company="${c.id}"><span class="recent-dot"></span><span>${esc(compact(c.data?.name||'Untitled work',28))}</span></button>`).join('')||'<span class="recent-empty">No recent work</span>';
+  $('#recentList').innerHTML=companies.slice(0,4).map(c=>`<button class="${c.id===active?'active':''}" data-company="${c.id}"><span class="recent-dot"></span><span>${esc(compact(displayCompanyName(c),28))}</span></button>`).join('')||'<span class="recent-empty">No recent work</span>';
 }
 function render(){
   nav();
@@ -187,8 +213,8 @@ function bind(){
   document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page;location.hash=page;$('#sidebar').classList.remove('open');render()});
   document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>{const ta=$('#goalForm textarea');if(ta){ta.value=b.dataset.example;ta.focus()}});
   document.querySelectorAll('[data-company]').forEach(b=>b.onclick=async()=>{active=b.dataset.company;localStorage.cz_active=active;await hydrateActive();page='work';location.hash=page;render()});
-  const gf=$('#goalForm');if(gf)gf.onsubmit=e=>{e.preventDefault();const goal=String(new FormData(e.target).get('goal')||'').trim();if(!goal)return;launchingGoal=goal;render();act(async()=>{operating=await api('/outcomes',{method:'POST',body:{goal,v1Mode:true}});company=operating.company;active=company.id;localStorage.cz_active=active;launchingGoal='';page='work';location.hash=page},'Work started')};
-  const cf=$('#conversation');if(cf)cf.onsubmit=e=>{e.preventDefault();const message=String(new FormData(e.target).get('message')||'').trim();if(!message||!operating)return;act(async()=>{await api(`/companies/${active}/sessions/${operating.session.id}/messages`,{method:'POST',body:{message}});e.target.reset()},'Updated')};
+  const gf=$('#goalForm');if(gf)gf.onsubmit=e=>{e.preventDefault();const goal=String(new FormData(e.target).get('goal')||'').trim();if(!goal)return;launchingGoal=goal;directAnswer=null;render();act(async()=>{const result=await api('/interactions',{method:'POST',body:{message:goal}});launchingGoal='';if(result.kind==='answer'){directAnswer={question:goal,answer:result.answer};company=null;operating=null;active='';localStorage.removeItem('cz_active');page='home';location.hash='home';return}operating=result.operating;company=operating.company;active=company.id;localStorage.cz_active=active;companies=[company,...companies.filter(x=>x.id!==company.id)];page='work';location.hash=page},'Ready')};
+  const cf=$('#conversation');if(cf)cf.onsubmit=async e=>{e.preventDefault();const form=e.target;const message=String(new FormData(form).get('message')||'').trim();if(!message)return;if(sendingMessage)return;sendingMessage=true;render();try{if(!active)throw Error('No active work is selected');if(!operating?.session?.id)await hydrateActive();if(!operating?.session?.id)throw Error('The active work session could not be loaded');await api(`/companies/${active}/sessions/${operating.session.id}/messages`,{method:'POST',body:{message}});form.reset();await refresh(false);toast('Sent')}catch(err){toast(`Couldn’t send: ${humanError(err)}`,true)}finally{sendingMessage=false;render()}};
   document.querySelectorAll('[data-provider]').forEach(b=>b.onclick=()=>openProvider());
   document.querySelectorAll('[data-control]').forEach(b=>b.onclick=()=>act(()=>api(`/companies/${active}/controls`,{method:'POST',body:{action:b.dataset.control}}),'Updated'));
   document.querySelectorAll('[data-approval]').forEach(b=>b.onclick=()=>act(()=>api(`/companies/${active}/approvals/${b.dataset.approval}/decision`,{method:'POST',body:{decision:b.dataset.decision}}),'Decision saved'));
@@ -198,10 +224,10 @@ function openProvider(){const manifest=JSON.stringify({capabilities:[{name:'obse
 function closeModal(){$('#modalWrap').hidden=true}
 function toast(message,bad=false){const t=$('#toast');t.textContent=message;t.className=`toast ${bad?'bad':''}`;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
 async function act(fn,message){if(!$('#busy').hidden)return;$('#busy').hidden=false;try{await fn();await refresh(false);toast(message)}catch(e){launchingGoal='';toast(humanError(e),true)}finally{$('#busy').hidden=true;render()}}
-async function refresh(renderAfter=true){const all=await api('/companies');companies=all.items||[];if(active){await hydrateActive()}if(renderAfter)render()}
-async function hydrateActive(){if(!active){company=null;operating=null;return}company=await api(`/companies/${active}`);const s=rec('operating_session').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0];operating=s?await api(`/companies/${active}/sessions/${s.id}`):null}
+async function refresh(renderAfter=true){const all=await api('/companies');companies=all.items||[];if(active){try{await hydrateActive()}catch(e){lastHydrationError=String(e?.message||e)}}if(renderAfter)render()}
+async function hydrateActive(){if(!active){company=null;operating=null;lastHydrationError='';return}const hydrated=await api(`/companies/${active}`);company=hydrated;lastHydrationError='';companies=[hydrated,...companies.filter(x=>x.id!==hydrated.id)];const sessions=(hydrated.records||[]).filter(x=>x.kind==='operating_session').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));const s=sessions[0];operating=s?await api(`/companies/${active}/sessions/${s.id}`):null;if(!operating&&s)throw Error('Active work session failed to hydrate')}
 
-$('#newWork').onclick=()=>{page='home';location.hash='home';company=null;operating=null;active='';localStorage.removeItem('cz_active');render();setTimeout(()=>$('#goalForm textarea')?.focus(),20)};
+$('#newWork').onclick=()=>{page='home';location.hash='home';company=null;operating=null;directAnswer=null;active='';localStorage.removeItem('cz_active');render();setTimeout(()=>$('#goalForm textarea')?.focus(),20)};
 $('#showAllWork').onclick=()=>{page='home';location.hash='home';render()};
 $('#refresh').onclick=()=>refresh();
 $('#menuBtn').onclick=()=>$('#sidebar').classList.add('open');
@@ -213,9 +239,10 @@ async function load(){
   const boot=$('#bootScreen'),status=$('#bootStatus');
   const [h,c]=await Promise.allSettled([fetch('/api/health',{cache:'no-store'}).then(r=>r.json()),api('/companies')]);
   if(h.status==='fulfilled'){health=h.value;$('#runtimeDot').classList.toggle('live',Boolean(health.ok));$('#runtimeTitle').textContent=health.ok?'Online':'Unavailable';$('#runtimeSub').textContent=health.tensormuxConfigured?'AI + runtime ready':'Runtime ready'}
-  if(c.status==='fulfilled'){companies=c.value.items||[];if(active&&!companies.some(x=>x.id===active)){active='';localStorage.removeItem('cz_active')}}
-  if(active){if(status)status.textContent='Picking up your latest work';try{await hydrateActive()}catch(e){toast(humanError(e),true)}}
+  if(c.status==='fulfilled'){companies=c.value.items||[]}
+  if(active){if(status)status.textContent='Picking up your latest work';try{await hydrateActive()}catch(e){lastHydrationError=String(e?.message||e);if(c.status==='fulfilled'&&!companies.some(x=>x.id===active)){active='';localStorage.removeItem('cz_active');company=null;operating=null}toast(humanError(e),true)}}
   render();
   const wait=Math.max(0,520-(performance.now()-started));setTimeout(()=>{boot?.classList.add('hide');setTimeout(()=>boot?.remove(),240)},wait);
 }
+setInterval(()=>{if(active&&page==='work'&&!sendingMessage)refresh(true).catch(e=>{lastHydrationError=String(e?.message||e);render()})},8000);
 load();

@@ -5,6 +5,7 @@ import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,re
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
 import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
 import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
+import {classifyInteraction,answerInteraction} from '../lib/interaction-kernel.mjs';
 
 export default async function handler(req,res){
   res.setHeader('content-type','application/json');
@@ -13,6 +14,16 @@ export default async function handler(req,res){
     const body=req.method==='GET'?{}:await read(req),p=String(req.query?.path||'').split('/').filter(Boolean),m=req.method;
     if(m==='GET'&&!p.length)return send(res,200,{ok:true,storage:storageMode(),contract:'v1',execution:'external-durable-worker',interface:'universal-operating'});
     if(m==='GET'&&p[0]==='runtime'&&p[1]==='workers')return send(res,200,{items:await listWorkerHeartbeats()});
+    if(m==='POST'&&p[0]==='interactions'&&p.length===1){
+      const message=String(body.message||body.goal||'').trim();
+      const decision=await classifyInteraction(message);
+      if(decision.route==='answer'&&!decision.needsFreshEvidence){
+        const direct=await answerInteraction(message,{context:body.context||{}});
+        return send(res,200,{kind:'answer',decision,answer:direct.answer,model:direct.model});
+      }
+      const operating=await startOperatingSession({goal:message,v1Mode:decision.route==='create'||Boolean(body.v1Mode),context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},ownerSessionId:browserSessionId});
+      return send(res,202,{kind:'work',decision,operating});
+    }
     if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await startOperatingSession({...body,ownerSessionId:browserSessionId}));
     if(m==='GET'&&p[0]==='companies'&&p.length===1){const items=(await companies()).filter(x=>canAccessCompany(x,browserSessionId));return send(res,200,{items});}
     if(m==='POST'&&p[0]==='companies'&&p.length===1){const ownerSessionId=body.ownerSessionId||(process.env.NODE_ENV==='production'?browserSessionId:undefined);return send(res,201,await createCompany({...body,...(ownerSessionId?{ownerSessionId}: {})}));}
