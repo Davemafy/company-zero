@@ -14,6 +14,8 @@ Run the migrations in order against the Supabase PostgreSQL database:
 db/schema.sql
 db/002_durable_runtime.sql
 db/003_control_plane.sql
+db/004_outcome_control.sql
+db/005_deliverable_artifacts.sql
 ```
 
 Verify them against a separate test database with:

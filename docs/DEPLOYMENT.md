@@ -13,6 +13,8 @@ Apply, in order:
 1. `db/schema.sql`
 2. `db/002_durable_runtime.sql`
 3. `db/003_control_plane.sql`
+4. `db/004_outcome_control.sql`
+5. `db/005_deliverable_artifacts.sql`
 
 Run at least one long-lived worker with `node worker/runner.mjs`. The API only creates and inspects durable work; the worker claims and executes it with leases and recovery.
 
@@ -39,6 +41,17 @@ No public domain is required. Configure the worker variables documented in `docs
 - `NEATLOGS_INGEST_URL`
 
 Production requires TensorMux for every model-dependent reasoning stage. Missing credentials or a failed TensorMux request stops that stage with an explicit error; production never silently substitutes deterministic output. The bounded, labelled deterministic fallback exists only in development-memory mode.
+
+## Outcome-control production capabilities
+
+For the controlled real-web golden path, configure on the Railway worker (and only where API routes themselves need the secret):
+
+- `GITHUB_TOKEN` / `GITHUB_REPOSITORY` / optional `GITHUB_BRANCH` — bounded repository action
+- `VERCEL_TOKEN` / `VERCEL_PROJECT_ID` / optional `VERCEL_TEAM_ID` — deployment receipt verification
+- `PAGESPEED_ENABLED=true` / optional `PAGESPEED_API_KEY` — independent performance baseline and after measurement
+- existing Scrapy Cloud or Zyte configuration when public-web research is required
+
+Keep tokens scoped to the controlled project/repository. Repository writes remain approval-gated by capability risk.
 
 ## Deployment-level capabilities
 

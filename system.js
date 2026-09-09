@@ -79,7 +79,7 @@ function meaningfulUpdates(){
   const jobs=rec('job').filter(x=>['completed','running','claimed','queued'].includes(x.state));
   jobs.slice(-2).forEach(x=>out.push({kind:x.state==='completed'?'done':'doing',title:x.state==='completed'?'Finished a piece of work':'Work is underway',body:compact(x.data?.operation||x.data?.source||'A persisted task is moving through execution.'),time:x.created_at}));
   const verify=latest('outcome_verification');
-  if(verify?.data?.results?.length)out.push({kind:'result',title:verify.data.outcomeAchieved?'The result is verified':'I measured the result',body:verify.data.results.map(r=>`${r.metricId||'Metric'}: ${r.before??'—'} → ${r.after??'—'}`).join(' · '),time:verify.created_at});
+  if(verify?.data?.results?.length)out.push({kind:'result',title:verify.data.outcomeAchieved?'The result is verified':verify.data.status==='insufficient_observation'?'The requested outcome is not verified':'I measured the result',body:verify.data.results.map(r=>r.status==='insufficient_observation'?`${r.description||r.metricId||'Result'}: no grounded before/after evidence yet`:`${r.metricId||'Metric'}: ${r.before??'—'} → ${r.after??'—'}`).join(' · '),time:verify.created_at});
   return out.sort((a,b)=>String(b.time).localeCompare(String(a.time))).slice(0,7);
 }
 
@@ -93,7 +93,7 @@ function needsYou(){
 
 function resultRows(){
   const v=latest('outcome_verification');
-  return (v?.data?.results||[]).map(r=>({name:sentence(r.metricId||r.metric||'Result'),before:r.before,after:r.after,target:r.target,passed:r.passed}));
+  return (v?.data?.results||[]).map(r=>({name:sentence(r.description||r.metricId||r.metric||'Result'),before:r.before,after:r.after,target:r.target,passed:r.passed,status:r.status}));
 }
 
 function promptBox({large=false}={}){return `<form class="prompt-box ${large?'large':''}" id="goalForm"><textarea name="goal" ${large?'autofocus':''} required placeholder="What do you need done?"></textarea><div class="prompt-foot"><span>${large?'Describe the result. Company Zero handles the setup.':'Be specific or just talk normally.'}</span><button aria-label="Start">${icon('arrowUp')}</button></div></form>`}
@@ -135,7 +135,7 @@ function work(){
   <div class="work-layout"><main class="work-main">${deliverableSurface()}<section class="now-card"><div class="now-organism"><img src="assets/brand/company-zero-mark-small.png" alt=""></div><div><span class="eyebrow">RIGHT NOW</span><h2>${esc(stage[0])}</h2><p>${esc(stage[1])}</p></div></section>
   ${need?needCard(need):''}
   <section class="stream"><div class="section-head"><div><span class="eyebrow">WORKING NOTES</span><h2>What’s happening</h2></div><span>${updates.length} updates</span></div>${updates.length?updates.map(updateRow).join(''):`<div class="soft-empty">I’m still getting the first useful update together.</div>`}</section>
-  ${rows.length?`<section class="result-card"><div><span class="eyebrow">MEASURED RESULT</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'The target is met':'Here’s what changed'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${esc(r.after??'—')}</strong><small>${r.before!==undefined?`${esc(r.before)} before`:''}${r.target!==undefined?` · target ${esc(r.target)}`:''}</small></div>`).join('')}</div><button class="text-link" data-page="results">See the proof ${icon('arrowRight')}</button></section>`:''}
+  ${rows.length?`<section class="result-card"><div><span class="eyebrow">${latest('outcome_verification')?.data?.status==='insufficient_observation'?'OUTCOME STATUS':'MEASURED RESULT'}</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'The target is met':latest('outcome_verification')?.data?.status==='insufficient_observation'?'Not verified yet':'Here’s what changed'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${esc(r.after??'—')}</strong><small>${r.before!==undefined?`${esc(r.before)} before`:''}${r.target!==undefined?` · target ${esc(r.target)}`:''}</small></div>`).join('')}</div><button class="text-link" data-page="results">See the proof ${icon('arrowRight')}</button></section>`:''}
   </main><aside class="work-side">${workSide()}</aside></div>${composer()}</div>`;
 }
 

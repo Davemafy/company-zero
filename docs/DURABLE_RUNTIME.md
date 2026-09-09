@@ -29,6 +29,6 @@ WORKER_LEASE_SECONDS
 WORKER_POLL_MS
 ```
 
-Apply migrations in order: `db/schema.sql`, then `db/002_durable_runtime.sql`.
+Apply migrations in order: `db/schema.sql`, `db/002_durable_runtime.sql`, `db/003_control_plane.sql`, then `db/004_outcome_control.sql`, then `db/005_deliverable_artifacts.sql`.
 
 Current explicit limitations: replay cases are executed inside the claimed experiment orchestration job rather than as separately leased child queue items. Automatic Governor scheduling, live MCP transport, resumable approval checkpoints, lease renewal during long calls and atomic SQL promotion remain unimplemented. These are not silently replaced with success.
