@@ -5,13 +5,14 @@ import {registerProvider} from '../lib/platform-v1.mjs';
 import {WorkerService} from '../lib/worker-service.mjs';
 import {get,list} from '../lib/store.mjs';
 
-const blocked=await startOperatingSession({goal:'Improve a measurable external outcome without unsafe assumptions'});
-assert.equal(blocked.session.state,'running');
-for(let i=0;i<8&&(await get(blocked.session.id)).state!=='awaiting_capabilities';i++)await new WorkerService({workerId:`blocked-stage-${i}`}).tick();
-const blockedRecords=await list({companyId:blocked.company.id,limit:100});
-assert.equal((await get(blocked.session.id)).state,'awaiting_capabilities');
-assert.equal(blockedRecords.filter(x=>x.kind==='capability_access_request').length,1);
-assert.equal(blockedRecords.filter(x=>x.kind==='job'&&x.data.operation!=='advance_operating_session').length,0);
+const partial=await startOperatingSession({goal:'Improve a measurable external outcome without unsafe assumptions'});
+assert.equal(partial.session.state,'running');
+for(let i=0;i<10&&(await get(partial.session.id)).state!=='operating';i++)await new WorkerService({workerId:`partial-stage-${i}`}).tick();
+const partialRecords=await list({companyId:partial.company.id,limit:200});
+assert.equal((await get(partial.session.id)).state,'operating');
+assert.equal(partialRecords.filter(x=>x.kind==='capability_access_request'&&x.state==='open').length,0,'missing later capabilities must not block useful progress when Studio can produce value');
+assert.ok(partialRecords.some(x=>x.kind==='system_capability_gap'&&x.state==='open'),'missing outcome closure should remain explicit as a deferred system gap');
+assert.ok(partialRecords.some(x=>x.kind==='job'&&!x.data.operation),'value-first progress should dispatch a mission job');
 
 const server=http.createServer(async(req,res)=>{const chunks=[];for await(const c of req)chunks.push(c);res.setHeader('content-type','application/json');res.end(JSON.stringify({baseline:0,current:5,baselineRecordId:'external-baseline-1',currentRecordId:'external-current-5'}))});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));

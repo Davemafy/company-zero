@@ -30,17 +30,18 @@ const started=await startOperatingSession({
     name:'observe_public_web',description:'Observe public page content only',endpoint:'/observe',method:'POST',risk:'read',operationKind:'observe',observes:['public_webpage_content'],inputSchema:{type:'object'},outputSchema:{type:'object'}
   }]}}]
 });
-for(let i=0;i<10&&(await get(started.session.id)).state!=='awaiting_capabilities';i++)await new WorkerService({workerId:`sufficiency-stage-${i}`}).tick();
+for(let i=0;i<12&&(await get(started.session.id)).state!=='operating';i++)await new WorkerService({workerId:`sufficiency-stage-${i}`}).tick();
 const session=await get(started.session.id);
-assert.equal(session.state,'awaiting_capabilities');
+assert.equal(session.state,'operating','insufficient final-outcome coverage must not block useful safe progress');
 const rows=await list({companyId:started.company.id,limit:500});
 const blocker=rows.find(x=>x.kind==='capability_access_request'&&x.state==='open');
-assert.ok(blocker,'missing action/verification coverage must persist a blocker');
-assert.equal(blocker.data.reasonCode,'outcome_capability_insufficient');
-assert.ok(blocker.data.missingKinds.includes('act'));
-assert.ok(blocker.data.missingKinds.includes('verify'));
-assert.equal(rows.filter(x=>x.kind==='job'&&!x.data.operation).length,0,'insufficient capabilities must not dispatch mission work');
-assert.equal(rows.filter(x=>x.kind==='organization_revision').length,0,'insufficient capability coverage must block before organization launch');
+assert.equal(blocker,undefined,'capability access should be deferred until a concrete blocked step');
+const gap=rows.find(x=>x.kind==='system_capability_gap'&&x.state==='open');
+assert.ok(gap,'missing final outcome coverage must remain explicit');
+assert.ok(gap.data.missingKinds.length>0);
+assert.ok(gap.data.missingKinds.includes('verify')||gap.data.missingKinds.includes('observe')||gap.data.missingKinds.includes('actuator'));
+assert.ok(rows.some(x=>x.kind==='job'&&!x.data.operation),'available capabilities must be used to create value now');
+assert.ok(rows.some(x=>x.kind==='organization_revision'),'partial capability coverage may still launch a bounded organization');
 const contract=rows.find(x=>x.kind==='outcome_contract');
 assert.equal(contract.data.desiredState,'help me generate 100k in revenue','goal compiler must preserve the requested future outcome rather than assert success');
 console.log('capability-sufficiency: PASS');
