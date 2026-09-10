@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {startOperatingSession,materializeFirstArtifact} from '../lib/universal.mjs';
+import {get,list} from '../lib/store.mjs';
+
+const goal='Turn this request into something immediately useful without waiting for the full operating plan';
+const startedAt=Date.now();
+const started=await startOperatingSession({goal});
+assert.ok(Date.now()-startedAt<2000,'session start must not wait for semantic compilation or artifact generation');
+let rows=await list({companyId:started.company.id,limit:500});
+const firstJob=rows.find(x=>x.kind==='job'&&x.data?.operation==='materialize_first_artifact');
+assert.ok(firstJob,'artifact-first job must be queued immediately');
+const session=await get(started.session.id);
+assert.equal(session.data.currentStage,'artifact_first');
+assert.ok(session.data.deliverableContractId,'deliverable contract must exist from mission start');
+const artifact=await materializeFirstArtifact(started.company.id,started.session.id);
+assert.equal(artifact.state,'ready');
+assert.ok((artifact.data.files||[]).length>0,'first artifact must contain files');
+const text=(artifact.data.files||[]).map(f=>String(f.content||'')).join(' ');
+assert.ok(text.length>120,'first artifact must contain substantive material');
+rows=await list({companyId:started.company.id,limit:1000});
+assert.ok(rows.some(x=>x.kind==='runtime_event'&&x.data?.type==='ARTIFACT_READY'),'artifact readiness must be durable and visible');
+const production=fs.readFileSync(new URL('../lib/universal.mjs',import.meta.url),'utf8');
+assert.equal(production.includes(goal),false,'artifact-first behavior must be generic');
+console.log('artifact-first-value: PASS');

@@ -1,6 +1,6 @@
 {
   "name": "company-zero",
-  "version": "6.10.0",
+  "version": "6.12.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "worker": "node worker/runner.mjs",
     "worker:production": "NODE_ENV=production node worker/runner.mjs",
     "check": "node --check system.js && for f in lib/*.mjs api/*.mjs worker/*.mjs tests/*.mjs; do node --check \"$f\"; done",
-    "test": "node tests/system-v1.test.mjs && node tests/durable-runtime.test.mjs && node tests/durable-experiment.test.mjs && node tests/v7-contributions.test.mjs && node tests/api-surfaces.test.mjs && node tests/approval-rollback-budget.test.mjs && node tests/control-plane-convergence.test.mjs && node tests/control-plane-authority.test.mjs && node tests/full-autonomous-lifecycle.test.mjs && node tests/universal-operating-interface.test.mjs && node tests/grounding-legitimacy.test.mjs && node tests/capability-sufficiency.test.mjs && node tests/production-infrastructure.test.mjs && node tests/zyte-capability.test.mjs && node tests/deployment-portability.test.mjs && node tests/scrapy-cloud-capability.test.mjs && node tests/scrapy-cloud-resumable.test.mjs && node tests/tensormux-timeout.test.mjs && node tests/runtime-provider-registration.test.mjs && node tests/end-to-end-completion.test.mjs && node tests/project-deliverable-e2e.test.mjs && node tests/studio-tensormux.test.mjs && node tests/github-repository-capability.test.mjs && node tests/outcome-control-architecture.test.mjs && node tests/outcome-control-e2e.test.mjs && node tests/pagespeed-vercel-capabilities.test.mjs && node tests/universal-v1-product.test.mjs && node tests/deliverable-engine.test.mjs && node tests/v1-torture-test.mjs && node tests/deliverable-hardening.test.mjs && node tests/v1-quality-contract.test.mjs && node tests/company-access-boundary.test.mjs && node tests/production-proof.test.mjs && node tests/behavioral-outcomes.test.mjs && node tests/universal-revision-loop.test.mjs && node tests/outcome-modality-closure.test.mjs && node tests/deliverable-materialization.test.mjs && node tests/universal-interaction-kernel.test.mjs && node tests/client-state-resilience.test.mjs && node tests/value-first-progress.test.mjs",
+    "test": "node tests/system-v1.test.mjs && node tests/durable-runtime.test.mjs && node tests/durable-experiment.test.mjs && node tests/v7-contributions.test.mjs && node tests/api-surfaces.test.mjs && node tests/approval-rollback-budget.test.mjs && node tests/control-plane-convergence.test.mjs && node tests/control-plane-authority.test.mjs && node tests/full-autonomous-lifecycle.test.mjs && node tests/universal-operating-interface.test.mjs && node tests/grounding-legitimacy.test.mjs && node tests/capability-sufficiency.test.mjs && node tests/production-infrastructure.test.mjs && node tests/zyte-capability.test.mjs && node tests/deployment-portability.test.mjs && node tests/scrapy-cloud-capability.test.mjs && node tests/scrapy-cloud-resumable.test.mjs && node tests/tensormux-timeout.test.mjs && node tests/runtime-provider-registration.test.mjs && node tests/end-to-end-completion.test.mjs && node tests/project-deliverable-e2e.test.mjs && node tests/studio-tensormux.test.mjs && node tests/github-repository-capability.test.mjs && node tests/outcome-control-architecture.test.mjs && node tests/outcome-control-e2e.test.mjs && node tests/pagespeed-vercel-capabilities.test.mjs && node tests/universal-v1-product.test.mjs && node tests/deliverable-engine.test.mjs && node tests/v1-torture-test.mjs && node tests/deliverable-hardening.test.mjs && node tests/v1-quality-contract.test.mjs && node tests/company-access-boundary.test.mjs && node tests/production-proof.test.mjs && node tests/behavioral-outcomes.test.mjs && node tests/universal-revision-loop.test.mjs && node tests/outcome-modality-closure.test.mjs && node tests/deliverable-materialization.test.mjs && node tests/universal-interaction-kernel.test.mjs && node tests/client-state-resilience.test.mjs && node tests/value-first-progress.test.mjs && node tests/artifact-first-value.test.mjs && node tests/instant-value.test.mjs",
     "test:integration": "node tests/postgres-integration.test.mjs",
     "verify": "npm run check && npm test",
     "test:integrations": "node scripts-test-integrations.mjs",
@@ -20,7 +20,9 @@
     "test:revision": "node tests/universal-revision-loop.test.mjs",
     "test:modality": "node tests/outcome-modality-closure.test.mjs",
     "test:materialization": "node tests/deliverable-materialization.test.mjs",
-    "test:interaction": "node tests/universal-interaction-kernel.test.mjs && node tests/client-state-resilience.test.mjs"
+    "test:interaction": "node tests/universal-interaction-kernel.test.mjs && node tests/client-state-resilience.test.mjs",
+    "test:artifact-first": "node tests/artifact-first-value.test.mjs",
+    "test:instant-value": "node tests/instant-value.test.mjs"
   },
   "devDependencies": {
     "pg": "^8.13.1"

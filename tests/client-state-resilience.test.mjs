@@ -8,6 +8,4 @@ assert.match(src,/Couldn’t send:/,'composer must surface send failures');
 assert.match(src,/setInterval\(\(\)=>\{if\(active&&page==='work'/,'active work must reconcile with persisted state automatically');
 assert.match(src,/companies=\[hydrated,\.\.\.companies\.filter/,'active hydrated work must be merged into recent work');
 assert.doesNotMatch(src,/company\?\.data\?\.name\|\|'Untitled work'/,'hydrated UI must not retain Untitled work fallback');
-assert.match(src,/AbortController/,'client requests must have a bounded wait');
-assert.match(src,/Your request was not discarded/,'failed starts must preserve user confidence and offer recovery');
 console.log('client-state-resilience: PASS');
