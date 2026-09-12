@@ -1,7 +1,8 @@
 import {storageMode,get,list} from '../lib/store.mjs';
 import {createCompany,companies,hydrateCompany,registerProvider,synthesize,launch,submitJob,submitEvent,diagnose,promotion,control,approvalDecision,approvals,rollback,DomainError} from '../lib/platform-v1.mjs';
 import {scheduleExperiment} from '../lib/experiment-service.mjs';
-import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse,materializeInstantValue} from '../lib/universal.mjs';
+import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse} from '../lib/universal.mjs';
+import {createValueMission,materializeFirstValue} from '../lib/mission-service.mjs';
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
 import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
 import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
@@ -21,10 +22,10 @@ export default async function handler(req,res){
         const direct=await answerInteraction(message,{context:body.context||{}});
         return send(res,200,{kind:'answer',decision,answer:direct.answer,model:direct.model});
       }
-      const operating=await startOperatingSession({goal:message,v1Mode:decision.route==='create'||Boolean(body.v1Mode),context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},ownerSessionId:browserSessionId});
+      const operating=await createValueMission({goal:message,context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},constraints:body.constraints||{},ownerSessionId:browserSessionId});
       return send(res,202,{kind:'work',decision,operating});
     }
-    if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await startOperatingSession({...body,ownerSessionId:browserSessionId}));
+    if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await createValueMission({...body,ownerSessionId:browserSessionId}));
     if(m==='GET'&&p[0]==='companies'&&p.length===1){const items=(await companies()).filter(x=>canAccessCompany(x,browserSessionId));return send(res,200,{items});}
     if(m==='POST'&&p[0]==='companies'&&p.length===1){const ownerSessionId=body.ownerSessionId||(process.env.NODE_ENV==='production'?browserSessionId:undefined);return send(res,201,await createCompany({...body,...(ownerSessionId?{ownerSessionId}: {})}));}
     const c=p[1];
@@ -32,7 +33,7 @@ export default async function handler(req,res){
     if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,await hydrateCompany(company));
     if(m==='GET'&&p[2]==='sessions'&&p[3])return send(res,200,await hydrateOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='advance')return send(res,202,await advanceOperatingSession(c,p[3]));
-    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='instant-value')return send(res,201,{artifact:await materializeInstantValue(c,p[3])});
+    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='instant-value')return send(res,201,{artifact:await materializeFirstValue(c,p[3])});
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='messages')return send(res,201,await converse(c,p[3],body.message));
     if(m==='POST'&&p[2]==='observations')return send(res,201,await recordObservation(c,body));
     if(m==='GET'&&p[2]==='jobs'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'job',limit:500})});
