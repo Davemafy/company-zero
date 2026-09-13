@@ -2,7 +2,7 @@ import {storageMode,get,list} from '../lib/store.mjs';
 import {createCompany,companies,hydrateCompany,registerProvider,synthesize,launch,submitJob,submitEvent,diagnose,promotion,control,approvalDecision,approvals,rollback,DomainError} from '../lib/platform-v1.mjs';
 import {scheduleExperiment} from '../lib/experiment-service.mjs';
 import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse} from '../lib/universal.mjs';
-import {createValueMissionWithArtifact,materializeFirstValue,hydrateValueMission,hydrateValueCompany,reviseValueMission} from '../lib/mission-service.mjs';
+import {createValueMission,createValueMissionWithArtifact,materializeFirstValue,hydrateValueMission,hydrateValueCompany,reviseValueMission} from '../lib/mission-service.mjs';
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
 import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
 import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
@@ -34,8 +34,8 @@ export default async function handler(req,res){
         try{const direct=await answerInteraction(message,{context:body.context||{}});return send(res,200,{kind:'answer',decision,answer:direct.answer,model:direct.model})}
         catch{return send(res,200,{kind:'answer',decision,answer:'I could not reach the reasoning service for that answer right now. Try again in a moment, or give me a concrete task and I will produce a working artifact instead.',model:null,degraded:true})}
       }
-      const created=await createValueMissionWithArtifact({goal:message,context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},constraints:body.constraints||{},ownerSessionId:browserSessionId});
-      return send(res,202,{kind:'work',decision,operating:created.operating,artifact:created.artifact});
+      const operating=await createValueMission({goal:message,context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},constraints:body.constraints||{},ownerSessionId:browserSessionId});
+      return send(res,202,{kind:'work',decision,operating,artifact:null,firstValuePending:true});
     }
     if(m==='POST'&&p[0]==='outcomes'&&p.length===1){const created=await createValueMissionWithArtifact({...body,ownerSessionId:browserSessionId});return send(res,202,{...created.operating,artifact:created.artifact})}
     if(m==='GET'&&p[0]==='companies'&&p.length===1){const items=(await companies()).filter(x=>canAccessCompany(x,browserSessionId));return send(res,200,{items});}
