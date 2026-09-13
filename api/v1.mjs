@@ -2,11 +2,20 @@ import {storageMode,get,list} from '../lib/store.mjs';
 import {createCompany,companies,hydrateCompany,registerProvider,synthesize,launch,submitJob,submitEvent,diagnose,promotion,control,approvalDecision,approvals,rollback,DomainError} from '../lib/platform-v1.mjs';
 import {scheduleExperiment} from '../lib/experiment-service.mjs';
 import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse} from '../lib/universal.mjs';
-import {createValueMission,materializeFirstValue} from '../lib/mission-service.mjs';
+import {createValueMissionWithArtifact,materializeFirstValue,hydrateValueMission,hydrateValueCompany,reviseValueMission} from '../lib/mission-service.mjs';
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
 import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
 import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
-import {classifyInteraction,answerInteraction} from '../lib/interaction-kernel.mjs';
+import {answerInteraction} from '../lib/interaction-kernel.mjs';
+
+function fastDecision(message){
+  const text=String(message||'').trim();const lower=text.toLowerCase();
+  if(/^(hi|hello|hey|yo|sup|good morning|good afternoon|good evening)[!. ]*$/.test(lower))return{route:'answer',rationale:'Greeting fast path.',needsFreshEvidence:false,requiresDurability:false,fastPath:true};
+  if(/^(who|what|when|where|why|how|is|are|do|does|did|can|could|would|should|which)\b/.test(lower)||/[?]\s*$/.test(text))return{route:'answer',rationale:'Direct question fast path.',needsFreshEvidence:false,requiresDurability:false,fastPath:true};
+  if(/^(find|research|look up|check|verify|compare|investigate|discover)\b/.test(lower))return{route:'investigate',rationale:'Evidence-seeking work.',needsFreshEvidence:true,requiresDurability:true,fastPath:true};
+  if(/^(write|draft|create|design|generate|summarize|explain|make|build|prepare|plan|fix|improve|reduce|increase|cut|get|launch|ship|set up|setup)\b/.test(lower))return{route:'create',rationale:'Artifact/action work.',needsFreshEvidence:false,requiresDurability:true,fastPath:true};
+  return{route:'operate',rationale:'Durable work default.',needsFreshEvidence:false,requiresDurability:true,fastPath:true};
+}
 
 export default async function handler(req,res){
   res.setHeader('content-type','application/json');
@@ -17,24 +26,27 @@ export default async function handler(req,res){
     if(m==='GET'&&p[0]==='runtime'&&p[1]==='workers')return send(res,200,{items:await listWorkerHeartbeats()});
     if(m==='POST'&&p[0]==='interactions'&&p.length===1){
       const message=String(body.message||body.goal||'').trim();
-      const decision=await classifyInteraction(message);
+      if(!message)throw new DomainError('interaction_required',400);
+      const decision=fastDecision(message)
       if(decision.route==='answer'&&!decision.needsFreshEvidence){
-        const direct=await answerInteraction(message,{context:body.context||{}});
-        return send(res,200,{kind:'answer',decision,answer:direct.answer,model:direct.model});
+        const lower=message.toLowerCase();
+        if(/^(hi|hello|hey|yo|sup|good morning|good afternoon|good evening)[!. ]*$/.test(lower))return send(res,200,{kind:'answer',decision,answer:'Hey — tell me what you want done.',model:null});
+        try{const direct=await answerInteraction(message,{context:body.context||{}});return send(res,200,{kind:'answer',decision,answer:direct.answer,model:direct.model})}
+        catch{return send(res,200,{kind:'answer',decision,answer:'I could not reach the reasoning service for that answer right now. Try again in a moment, or give me a concrete task and I will produce a working artifact instead.',model:null,degraded:true})}
       }
-      const operating=await createValueMission({goal:message,context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},constraints:body.constraints||{},ownerSessionId:browserSessionId});
-      return send(res,202,{kind:'work',decision,operating});
+      const created=await createValueMissionWithArtifact({goal:message,context:{...(body.context||{}),interactionRoute:decision.route,needsFreshEvidence:decision.needsFreshEvidence},constraints:body.constraints||{},ownerSessionId:browserSessionId});
+      return send(res,202,{kind:'work',decision,operating:created.operating,artifact:created.artifact});
     }
-    if(m==='POST'&&p[0]==='outcomes'&&p.length===1)return send(res,202,await createValueMission({...body,ownerSessionId:browserSessionId}));
+    if(m==='POST'&&p[0]==='outcomes'&&p.length===1){const created=await createValueMissionWithArtifact({...body,ownerSessionId:browserSessionId});return send(res,202,{...created.operating,artifact:created.artifact})}
     if(m==='GET'&&p[0]==='companies'&&p.length===1){const items=(await companies()).filter(x=>canAccessCompany(x,browserSessionId));return send(res,200,{items});}
     if(m==='POST'&&p[0]==='companies'&&p.length===1){const ownerSessionId=body.ownerSessionId||(process.env.NODE_ENV==='production'?browserSessionId:undefined);return send(res,201,await createCompany({...body,...(ownerSessionId?{ownerSessionId}: {})}));}
     const c=p[1];
     const company=(p[0]==='companies'&&c)?assertCompanyAccess(await get(c),browserSessionId):null;
-    if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,await hydrateCompany(company));
-    if(m==='GET'&&p[2]==='sessions'&&p[3])return send(res,200,await hydrateOperatingSession(c,p[3]));
+    if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,company?.data?.mode==='thin_product_runtime'?await hydrateValueCompany(company):await hydrateCompany(company));
+    if(m==='GET'&&p[2]==='sessions'&&p[3])return send(res,200,company?.data?.mode==='thin_product_runtime'?await hydrateValueMission(c,p[3]):await hydrateOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='advance')return send(res,202,await advanceOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='instant-value')return send(res,201,{artifact:await materializeFirstValue(c,p[3])});
-    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='messages')return send(res,201,await converse(c,p[3],body.message));
+    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='messages')return send(res,201,company?.data?.mode==='thin_product_runtime'?await reviseValueMission(c,p[3],body.message):await converse(c,p[3],body.message));
     if(m==='POST'&&p[2]==='observations')return send(res,201,await recordObservation(c,body));
     if(m==='GET'&&p[2]==='jobs'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'job',limit:500})});
     if(m==='GET'&&p[2]==='organizations'&&p.length===3)return send(res,200,{items:(await list({companyId:c,limit:500})).filter(x=>['organization_revision','candidate_revision'].includes(x.kind))});
