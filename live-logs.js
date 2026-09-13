@@ -2,6 +2,7 @@ const LOG_POLL_MS=1500;
 let lastCompany='';
 let lastSession='';
 let lastRendered='';
+let lastTerminalEvent='';
 let inflight=false;
 
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -61,10 +62,10 @@ function mount(events){
 async function poll(){
   if(inflight)return;
   const companyId=localStorage.cz_active||'';
-  if(!companyId){lastCompany='';lastSession='';return}
+  if(!companyId){lastCompany='';lastSession='';lastTerminalEvent='';return}
   inflight=true;
   try{
-    if(companyId!==lastCompany){lastCompany=companyId;lastSession='';lastRendered=''}
+    if(companyId!==lastCompany){lastCompany=companyId;lastSession='';lastRendered='';lastTerminalEvent=''}
     const [companyRes,eventRes]=await Promise.all([
       fetch(`/api/v1/companies/${encodeURIComponent(companyId)}`,{cache:'no-store'}),
       fetch(`/api/v1/companies/${encodeURIComponent(companyId)}/runtime-events`,{cache:'no-store'})
@@ -74,9 +75,10 @@ async function poll(){
     if(!lastSession)lastSession=sessionFromRecords(company.records||[]);
     const events=(payload.items||[]).filter(x=>!lastSession||x.data?.sessionId===lastSession).sort((a,b)=>String(a.created_at||'').localeCompare(String(b.created_at||''))).map(humanEvent);
     mount(events);
-    const terminal=events.at(-1)?.type;
-    if(['RESULT_READY','RESULT_PARTIAL'].includes(terminal)){
-      window.dispatchEvent(new CustomEvent('cz:result-ready',{detail:{companyId,sessionId:lastSession,type:terminal}}));
+    const terminalEvent=events.at(-1);
+    if(terminalEvent&&['RESULT_READY','RESULT_PARTIAL'].includes(terminalEvent.type)&&terminalEvent.id!==lastTerminalEvent){
+      lastTerminalEvent=terminalEvent.id;
+      window.dispatchEvent(new CustomEvent('cz:result-ready',{detail:{companyId,sessionId:lastSession,type:terminalEvent.type}}));
     }
   }catch{}finally{inflight=false}
 }
