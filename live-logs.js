@@ -11,6 +11,7 @@ let allowFullWorkRender=false;
 let restoreScrollY=null;
 let lastArtifactSignature='';
 let pollFailures=0;
+let refreshQueued=false;
 
 const escapeHtml=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const time=t=>{try{return new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch{return''}};
@@ -140,7 +141,7 @@ function installRenderGuard(){
   Object.defineProperty(Element.prototype,'innerHTML',{configurable:true,enumerable:descriptor.enumerable,get:descriptor.get,set(value){
     const isWorkSwap=this.id==='view'&&this.querySelector?.('.premium-work')&&typeof value==='string'&&value.includes('premium-work');
     if(isWorkSwap&&!allowFullWorkRender)return;
-    if(isWorkSwap&&allowFullWorkRender){restoreScrollY=window.scrollY;allowFullWorkRender=false;descriptor.set.call(this,value);requestAnimationFrame(()=>{if(restoreScrollY!==null){window.scrollTo({top:restoreScrollY,behavior:'instant'});restoreScrollY=null}});return}
+    if(isWorkSwap&&allowFullWorkRender){restoreScrollY=window.scrollY;allowFullWorkRender=false;descriptor.set.call(this,value);requestAnimationFrame(()=>{if(restoreScrollY!==null){window.scrollTo({top:restoreScrollY,behavior:'auto'});restoreScrollY=null}});return}
     descriptor.set.call(this,value);
   }});
   document.addEventListener('click',e=>{if(e.target.closest('#refresh,[data-company],[data-page],[data-control],[data-approval],[data-provider]'))allowFullWorkRender=true},true);
@@ -149,8 +150,10 @@ function installRenderGuard(){
 }
 
 function requestFullRefresh(){
-  allowFullWorkRender=true;
+  if(refreshQueued)return;
+  refreshQueued=true;allowFullWorkRender=true;
   const refresh=document.getElementById('refresh');if(refresh)refresh.click();
+  setTimeout(()=>{refreshQueued=false},900);
 }
 
 async function poll(){
@@ -173,7 +176,7 @@ async function poll(){
     if(cachedCompany){const signature=artifactSignature(cachedCompany.records||[]);if(lastArtifactSignature&&signature!==lastArtifactSignature)requestFullRefresh();lastArtifactSignature=signature}
     const terminalEvent=events.at(-1);
     if(terminalEvent&&['RESULT_READY','RESULT_PARTIAL'].includes(terminalEvent.type)&&terminalEvent.id!==lastTerminalEvent){lastTerminalEvent=terminalEvent.id;requestFullRefresh()}
-  }catch{pollFailures++;mount([])}finally{inflight=false}
+  }catch{pollFailures++;const pulse=document.querySelector('.cz-live-pulse');if(pulse){pulse.classList.add('warn');const label=pulse.querySelector('b');if(label)label.textContent='reconnecting'}}finally{inflight=false}
 }
 
 installRenderGuard();
