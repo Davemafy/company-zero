@@ -51,6 +51,22 @@ assert.equal(breadPlan.contract.askPolicy,'continue_unless_blocked');
 assert.ok(breadPlan.contract.required.length>=12,'bread prompt lost requested deliverables');
 assert.ok(!breadPlan.workUnits.some(unit=>/prospect/i.test(unit.title)),'bread prompt regressed to prospect workflow');
 
+// Production regression from Sep 14: "sell umbrellas to rich people" must get a real sales organization,
+// and polished hallucinated luxury facts must not receive Evaluator: PASS with zero receipts.
+const umbrellaPlan=compileExecutionPlan('sell umbrellas to rich people');
+assert.equal(umbrellaPlan.kind,'sales_strategy','umbrella mission fell back to a generic organization');
+assert.deepEqual(umbrellaPlan.organization.functions,['market_strategy','offer_design','channel_strategy','economics','verification']);
+const umbrellaGarbage={files:[
+  {name:'customer_profile.md',content:`# High-Net-Worth Customer Profile\nTarget Segment: Ultra-High-Net-Worth Individuals. Net Worth: $1M - $50M+. Geography: NYC, London, Hong Kong, Dubai. Customers increasingly value sustainability and have high propensity for gifting.`},
+  {name:'value_proposition.md',content:`# Luxury Umbrella Value Proposition\nAerospace Carbon Fiber Frame: ultra-lightweight yet unbreakable. Water-Repellent Silk & Teflon Coating: 100% waterproof with self-cleaning properties, absolute dryness and zero maintenance.`},
+  {name:'channel_strategy.md',content:`# Exclusive Sales Channel Strategy\nGlobal concierge networks have direct access to HNWIs. Private aviation lounges and five-star hotels are ideal channels.`},
+  {name:'pricing_model.md',content:`# Premium Pricing\nBase model: $1,200 - $1,500. Bespoke model: $2,000 - $3,000. COGS: 30-40%. Margin: 60-70%.`}
+]};
+const umbrellaQa=qualityCheck(umbrellaGarbage,umbrellaPlan);
+assert.equal(umbrellaQa.ok,false,'ungrounded umbrella luxury claims received Evaluator: PASS');
+assert.ok(umbrellaQa.reasons.includes('unsupported_specific_claims'),'unsupported product/market claims were not caught');
+assert.equal(umbrellaQa.structuralFailure,true,'false-pass umbrella result should become structural evidence');
+
 // Domain-specific quality gates: these used to allow polished-looking garbage through.
 const buildPlan=compileExecutionPlan('Improve this landing page with implementation details.');
 const buildGarbage={files:[{name:'plan.md',content:'This landing page should be modern, clear, premium and polished. '.repeat(8)}]};
@@ -75,4 +91,4 @@ for(const testCase of cases){
   assert.ok(!/factory opened|revenue generated|customers acquired|five customers signed|deployed successfully/i.test(JSON.stringify(built.output.artifact)),`${testCase.name}: fabricated external outcome`);
 }
 
-console.log('v1-torture-test: 10/10 regression prompts PASS');
+console.log('v1-torture-test: 10/10 core prompts + umbrella production regression PASS');
