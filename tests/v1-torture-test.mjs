@@ -34,8 +34,11 @@ for(const testCase of cases){
   assert.ok(fallback.files.every(file=>String(file.content||'').trim().length>80),`${testCase.name}: fallback artifact is empty`);
   assert.ok(!/one detail needed for for|for's url/i.test(JSON.stringify(fallback)),`${testCase.name}: malformed clarification regression returned`);
   if(testCase.kind==='company_creation'){
-    assert.equal(fallback.files[0].name,'venture-contract.md',`${testCase.name}: venture fallback changed domains`);
-    assert.ok(/venture strategy/i.test(fallback.files[0].content),`${testCase.name}: venture organization was not preserved`);
+    const names=fallback.files.map(file=>file.name);
+    assert.deepEqual(names,['brand-brief.md','launch-kit.md','economics-and-validation.md'],`${testCase.name}: degraded venture must preserve a usable starter pack`);
+    assert.ok(!names.includes('venture-contract.md'),`${testCase.name}: degraded venture regressed to generic contract-only output`);
+    assert.ok(fallback.files.every(file=>/PROPOSAL|ASSUMPTION|PARTIAL|Truth boundary/i.test(file.content)),`${testCase.name}: fallback decisions are not locally labelled as provisional`);
+    assert.ok(/Break-even units = O \/ contribution after acquisition/.test(fallback.files.find(file=>file.name==='economics-and-validation.md')?.content||''),`${testCase.name}: economics fallback lacks an actionable model`);
   }
 
   const knownGarbage={files:[{name:'result.md',content:`Could not complete this request. Work is underway and will appear here later. The request was saved, the reasoning service is unavailable, and you should try again. ${'Generic filler '.repeat(20)}`}]};
@@ -45,6 +48,19 @@ for(const testCase of cases){
 }
 
 // Lock the exact failure that triggered this suite: a rich venture brief must never become lead generation.
+const degradedFashionPlan=compileExecutionPlan('make a fashion brand');
+const degradedFashion=usefulFallback('make a fashion brand',degradedFashionPlan,{
+  reason:'organization_no_artifacts:tensormux_timeout,agentrouter_http_503',
+  publicEvidence:{ok:true,queries:['fashion market pricing competitors'],results:[{title:'Example captured source',url:'https://example.com/fashion',snippet:'Captured search input only.'}]},
+  roleTelemetry:[{success:false,provider:'tensormux',model:'glm-4-7-flash',failure:{code:'tensormux_timeout'},usage:{total_tokens:0}},{success:false,provider:'agentrouter',model:'glm-5.3',failure:{code:'agentrouter_http_503'},usage:{total_tokens:0}}],
+  roleTelemetrySummary:{expectedRoles:4,completedRoles:0}
+});
+assert.equal(degradedFashion.degraded,true);
+assert.equal(degradedFashion.degradedReason,'organization_no_artifacts:tensormux_timeout,agentrouter_http_503');
+assert.equal(degradedFashion.roleTelemetry.length,2,'degraded candidate lost failed provider telemetry');
+assert.equal(degradedFashion.publicEvidence.results.length,1,'degraded candidate lost captured evidence receipts');
+assert.ok(degradedFashion.files.some(file=>file.name==='brand-brief.md'&&/Fewer pieces\. Stronger point of view\./.test(file.content)),'fashion fallback is not mission-specific');
+
 const breadPlan=compileExecutionPlan(longBreadPrompt);
 assert.equal(breadPlan.kind,'company_creation');
 assert.equal(breadPlan.contract.askPolicy,'continue_unless_blocked');
