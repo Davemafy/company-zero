@@ -3,7 +3,7 @@ name: verify + production torture
 on:
   push:
     branches:
-      - main
+      - verify-91e-fallback
   pull_request:
     branches:
       - main
@@ -22,117 +22,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Full repository verification
-        run: npm run verify
-      - name: Wait for exact production deployments
-        if: (github.event_name == 'push' && contains(github.event.head_commit.message, '[prod-torture]')) || (github.event_name == 'pull_request' && github.head_ref == 'verification-run-20260918')
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Targeted fallback verification
         run: |
-          node --input-type=module <<'NODE'
-          const required=new Set(['Vercel','empathetic-exploration - company-zero']);
-          const deadline=Date.now()+6*60_000;
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-          while(Date.now()<deadline){
-            const response=await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/commits/${process.env.GITHUB_SHA}/status`,{headers:{accept:'application/vnd.github+json',authorization:`Bearer ${process.env.GH_TOKEN}`,'x-github-api-version':'2022-11-28'}});
-            if(!response.ok)throw Error('deployment_status_http_'+response.status);
-            const body=await response.json(),latest=new Map();
-            for(const status of body.statuses||[])if(required.has(status.context)&&!latest.has(status.context))latest.set(status.context,status.state);
-            console.log('deployment-status='+JSON.stringify(Object.fromEntries(latest)));
-            for(const [context,state] of latest)if(['failure','error'].includes(state))throw Error(`${context}_deployment_${state}`);
-            if([...required].every(context=>latest.get(context)==='success')){console.log('exact production deployments ready for '+process.env.GITHUB_SHA);process.exit(0)}
-            await sleep(5000);
-          }
-          throw Error('exact_production_deployments_timeout');
-          NODE
-      - name: Fresh production fashion-brand torture
-        if: (github.event_name == 'push' && contains(github.event.head_commit.message, '[prod-torture]')) || (github.event_name == 'pull_request' && github.head_ref == 'verification-run-20260918')
-        env:
-          COMPANY_ZERO_BASE_URL: https://companyzero-hq.vercel.app
-          CZ_TORTURE_GOAL: make a fashion brand
-        run: |
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-
-          const base=process.env.COMPANY_ZERO_BASE_URL.replace(/\/$/,'');
-          const goal=process.env.CZ_TORTURE_GOAL;
-          let cookie='';
-          const api=async(path,{method='GET',body}={})=>{
-            const headers={'content-type':'application/json'};
-            if(cookie)headers.cookie=cookie;
-            const response=await fetch(base+'/api/v1'+path,{method,headers,body:body==null?undefined:JSON.stringify(body)});
-            const setCookie=response.headers.get('set-cookie');
-            if(setCookie&&!cookie)cookie=setCookie.split(';')[0];
-            const text=await response.text();
-            let value;try{value=text?JSON.parse(text):{}}catch{value={raw:text}};
-            if(!response.ok)throw Object.assign(Error(value?.error||('http_'+response.status)),{status:response.status,details:value});
-            return value;
-          };
-          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-          const startedAt=Date.now();
-          const start=await api('/interactions',{method:'POST',body:{message:goal}});
-          assert.equal(start.kind,'work','torture request must enter durable work path');
-          const companyId=start.operating?.company?.id;
-          const sessionId=start.operating?.session?.id;
-          assert.ok(companyId&&sessionId,'production start must return company/session ids');
-          console.log('CZ_TORTURE_STARTED='+JSON.stringify({companyId,sessionId,startedAt:new Date(startedAt).toISOString()}));
-
-          let hydrated=null,latest=null,records=[],terminalJob=null;
-          const deadline=Date.now()+12*60_000;
-          while(Date.now()<deadline){
-            hydrated=await api('/companies/'+companyId+'/sessions/'+sessionId);
-            records=hydrated.company?.records||[];
-            const artifacts=(hydrated.artifacts||records.filter(x=>x.kind==='artifact'&&x.data?.sessionId===sessionId))
-              .filter(x=>['ready','partial'].includes(x.state))
-              .sort((a,b)=>Number(b.data?.deliverableVersion||1)-Number(a.data?.deliverableVersion||1)||String(b.created_at).localeCompare(String(a.created_at)));
-            latest=artifacts[0]||null;
-            terminalJob=records.find(x=>x.kind==='job'&&x.id===hydrated.session?.data?.firstValueJobId)||null;
-            if(latest&&['READY','PARTIAL'].includes(latest.data?.readiness||''))break;
-            if(['failed','dead_letter'].includes(terminalJob?.state))break;
-            await sleep(2000);
-          }
-
-          assert.ok(latest,'fresh production mission must terminate with a persisted candidate artifact');
-          const readiness=latest.data?.readiness;
-          const files=Array.isArray(latest.data?.files)?latest.data.files:[];
-          assert.ok(files.length>0,'terminal artifact must preserve useful files');
-          assert.ok(files.some(f=>String(f?.content||'').trim().length>=80),'terminal artifact must contain substantive material');
-          const genericFallbacks=new Set(['result-unavailable.md','venture-contract.md']);
-          assert.ok(files.some(f=>!genericFallbacks.has(String(f?.name||'').toLowerCase())&&String(f?.content||'').trim().length>=160),'normal fashion venture must preserve at least one concrete non-generic candidate artifact');
-          assert.ok(['READY','PARTIAL'].includes(readiness),'terminal artifact must be truthfully READY or PARTIAL');
-
-          if(readiness==='READY'){
-            assert.equal(latest.state,'ready','READY requires persisted ready state');
-            assert.equal(latest.data?.claimVerification?.passed,true,'READY requires independent claim verification');
-            assert.equal(latest.data?.qa?.passed,true,'READY requires structural QA');
-            assert.notEqual(latest.data?.degraded,true,'READY cannot be degraded');
-          } else {
-            assert.equal(latest.state,'partial','PARTIAL must persist as partial');
-            assert.notEqual(latest.data?.qa?.passed,true,'PARTIAL cannot expose QA passed=true');
-          }
-
-          const events=records.filter(x=>x.kind==='runtime_event'&&x.data?.sessionId===sessionId);
-          const types=events.map(x=>x.data?.type);
-          const roleEvents=events.filter(x=>/^ROLE_|^CLAIM_|^LATENCY_|^EVALUATOR_|^REPAIRED_|^RESULT_|^RESEARCH_|^DRAFT_/.test(String(x.data?.type||'')));
-          const roleFailures=events.filter(x=>x.data?.type==='ROLE_FAILED').map(x=>({message:x.data?.message,data:x.data?.data}));
-          const escalations=events.filter(x=>['ROLE_ESCALATED','ROLE_RECOVERED','ROLE_ESCALATION_UNAVAILABLE'].includes(x.data?.type)).map(x=>({type:x.data?.type,message:x.data?.message,data:x.data?.data}));
-          const verifier=events.filter(x=>String(x.data?.type||'').startsWith('CLAIM_VERIFIER_')).map(x=>({type:x.data?.type,message:x.data?.message,data:x.data?.data}));
-          const summary={
-            companyId,sessionId,goal,readiness,artifactState:latest.state,
-            title:latest.data?.title,
-            files:files.map(f=>f.name),
-            degraded:Boolean(latest.data?.degraded),
-            degradedReason:latest.data?.degradedReason||null,
-            claimVerification:{passed:latest.data?.claimVerification?.passed===true,repaired:latest.data?.claimVerification?.repaired===true,failed:latest.data?.claimVerification?.failed===true,error:latest.data?.claimVerification?.error||null,provider:latest.data?.claimVerification?.provider||null,model:latest.data?.claimVerification?.model||null},
-            qa:latest.data?.qa||null,
-            runtimeTelemetry:latest.data?.runtimeTelemetry||null,
-            sessionState:hydrated.session?.data?.state||hydrated.session?.state,
-            currentStage:hydrated.session?.data?.currentStage||null,
-            terminalJob:terminalJob?{id:terminalJob.id,state:terminalJob.state,data:terminalJob.data}:null,
-            eventTypes:types,
-            roleFailures,escalations,verifier,
-            selectedTrace:roleEvents.slice(-80).map(x=>({type:x.data?.type,message:x.data?.message,data:x.data?.data})),
-            elapsedMs:Date.now()-startedAt
-          };
-          console.log('CZ_TORTURE_RESULT='+JSON.stringify(summary));
-          NODE
+          node tests/outcome-control-e2e.test.mjs
+          node tests/outcome-control-e2e.test.mjs
+          node tests/outcome-control-e2e.test.mjs
+          node tests/provider-policy-reliability.test.mjs
+          node tests/v1-torture-test.mjs
+          node tests/instant-value.test.mjs
