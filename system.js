@@ -155,7 +155,7 @@ function workProgress(){
 }
 function liveOutput(updates){
   const external=currentRec('world_fact').filter(x=>x.data?.classification==='EXTERNAL_OBSERVATION');
-  const artifacts=rec('artifact').filter(x=>x.state==='ready');
+  const artifacts=rec('artifact').filter(x=>['ready','partial'].includes(x.state));
   const roles=production()?.data?.roles||[];
   const readyArtifacts=artifacts.filter(x=>x.data?.readiness==='READY'||x.data?.claimVerification?.passed===true);const candidates=artifacts.length-readyArtifacts.length;const count=external.length+readyArtifacts.length;
   const outputLabel=count?`${count} verified/grounded output${count===1?'':'s'} captured`:candidates?`${candidates} candidate artifact${candidates===1?'':'s'} · verification pending`:'Work will appear here as it becomes real';
@@ -170,7 +170,7 @@ function work(){
   const s=statusModel(),need=needsYou(),updates=meaningfulUpdates(),stage=userStage(),rows=resultRows();
   const goal=goalText();
   const evidence=currentRec('world_fact').filter(x=>x.data?.classification==='EXTERNAL_OBSERVATION').length;
-  const artifactRecords=rec('artifact').filter(x=>x.state==='ready');const artifacts=artifactRecords.length;const readyArtifacts=artifactRecords.filter(x=>x.data?.readiness==='READY'||x.data?.claimVerification?.passed===true).length;
+  const artifactRecords=rec('artifact').filter(x=>['ready','partial'].includes(x.state));const artifacts=artifactRecords.length;const readyArtifacts=artifactRecords.filter(x=>x.data?.readiness==='READY'||x.data?.claimVerification?.passed===true).length;
   return `<div class="work-page premium-work"><header class="work-command"><div class="command-title"><button class="back-home" data-page="home" aria-label="Back to home">${icon('arrowLeft')}</button><div><span class="eyebrow">ACTIVE MISSION</span><h1>${esc(goal)}</h1></div></div><div class="command-meta"><span>${artifacts} artifact${artifacts===1?'':'s'}</span><span>${evidence} receipt${evidence===1?'':'s'}</span>${statusPill(s)}</div></header>
   <div class="mission-kpis"><div><span>NOW</span><strong>${esc(stage[0])}</strong></div><div><span>PROOF</span><strong>${evidence?`${evidence} grounded signal${evidence===1?'':'s'}`:'Awaiting evidence'}</strong></div><div><span>OUTPUT</span><strong>${readyArtifacts?`${readyArtifacts} ready`:artifacts?`${artifacts} candidate${artifacts===1?'':'s'}`:'Building V1'}</strong></div></div>
   <div class="mission-grid"><main class="mission-main">${need?needCard(need):''}${liveOutput(updates)}${deliverableSurface()}${rows.length?`<section class="result-card premium-result"><div><span class="eyebrow">${latest('outcome_verification')?.data?.outcomeAchieved?'VERIFIED OUTCOME':'OUTCOME STATUS'}</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'Target achieved':'Not verified yet'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${r.hasObservation?esc(r.after):'No grounded observation yet'}</strong><small>${r.target!==undefined?`Target ${esc(r.target)}`:'Evidence required'}</small></div>`).join('')}</div><button class="text-link" data-page="results">Open evidence ledger ${icon('arrowRight')}</button></section>`:''}</main>
