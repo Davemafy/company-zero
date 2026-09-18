@@ -18,7 +18,7 @@ assert.ok(created.session.data.firstValueJobId,'first-value work must be durably
 const worked=await new WorkerService({workerId:'thin-product-first-value'}).tick();
 assert.ok(worked?.artifact,'durable worker must materialize the first-value artifact');
 const first={artifact:worked.artifact,operating:await hydrateValueMission(created.company.id,created.session.id)};
-assert.equal(first.artifact.state,'ready');
+assert.equal(first.artifact.state,'partial','unverified candidate record state must be partial');
 assert.equal(first.artifact.data.deliverableVersion,1);
 assert.ok(first.artifact.data.files?.[0]?.content?.length>120,'first artifact must contain visible useful content');
 assert.equal(first.artifact.data.readiness,'PARTIAL','unverified fallback must never be labelled READY');
