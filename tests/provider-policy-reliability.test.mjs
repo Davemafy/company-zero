@@ -47,6 +47,11 @@ try{
   assert.equal(calls[2].url,'https://groq.test/openai/v1/chat/completions');
   assert.equal(calls[2].body?.model,'openai/gpt-oss-120b');
   assert.equal(calls[2].body?.response_format?.type,'json_object');
+  calls.length=0;
+  await completeJson({policy:'verifier',role:'strict-verify-test',system:'Return JSON',user:'{}',responseSchema:{type:'object',properties:{ok:{type:'boolean'}},required:['ok'],additionalProperties:false},responseSchemaName:'strict_verify'});
+  assert.equal(calls[0].body?.response_format?.type,'json_schema');
+  assert.equal(calls[0].body?.response_format?.json_schema?.strict,true);
+  assert.equal(calls[0].body?.response_format?.json_schema?.name,'strict_verify');
   await assert.rejects(()=>completeJson({policy:'verifier',provider:'openrouter',role:'bad-override',system:'Return JSON',user:'{}'}),error=>error?.message==='verifier_provider_override_forbidden');
 }finally{globalThis.fetch=savedFetch}
 process.env.PROVIDER_CIRCUIT_OPEN_MS='5000';
