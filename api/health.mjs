@@ -1,11 +1,15 @@
 import {json} from './_utils.mjs';
 import {storageMode} from '../lib/store.mjs';
+import {providerConfigSnapshot} from '../lib/model-gateway.mjs';
 export default function handler(req,res){
+  const providers=providerConfigSnapshot();
   return json(res,200,{
     ok:true,
     platform:'vercel',
     storage:storageMode(),
-    tensormuxConfigured:Boolean(process.env.TENSORMUX_BASE_URL&&process.env.TENSORMUX_API_KEY),
+    tensormuxConfigured:providers.tensormux.configured,
+    agentrouterConfigured:providers.agentrouter.configured,
+    providers,
     neatlogsConfigured:Boolean(process.env.NEATLOGS_WRITE_KEY||process.env.NEATLOGS_API_KEY),
     zyteConfigured:Boolean(process.env.ZYTE_API_KEY),
     scrapyCloudConfigured:Boolean(process.env.SCRAPY_CLOUD_API_KEY&&process.env.SCRAPY_CLOUD_PROJECT_ID),
