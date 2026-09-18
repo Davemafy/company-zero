@@ -9,7 +9,7 @@ process.env.AGENTROUTER_SPECIALIST_MODEL='glm-5.3';
 process.env.AGENTROUTER_FRONTIER_MODEL='claude-opus-5';
 process.env.AGENTROUTER_VERIFIER_MODEL='gpt-5.6-sol';
 
-const {routeForPolicy,providerConfigured,sanitizeProviderError}=await import('../lib/model-gateway.mjs');
+const {routeForPolicy,providerConfigured,providerConfigSnapshot,sanitizeProviderError,completeJson}=await import('../lib/model-gateway.mjs');
 const {policyForRole}=await import('../lib/role-runtime.mjs');
 
 assert.deepEqual(routeForPolicy('routine_executor'),{policy:'routine_executor',provider:'tensormux',model:'glm-4-7-flash',strictProvider:false});
@@ -31,5 +31,19 @@ assert.equal(sanitizeProviderError(Object.assign(new Error('bad'),{status:401}),
 assert.equal(sanitizeProviderError(Object.assign(new Error('rate'),{status:429}),'agentrouter'),'agentrouter_http_429');
 assert.equal(sanitizeProviderError(Object.assign(new Error('down'),{status:503}),'agentrouter'),'agentrouter_http_503');
 assert.equal(sanitizeProviderError(Object.assign(new Error('agentrouter_timeout'),{status:504}),'agentrouter'),'agentrouter_timeout');
+assert.equal(sanitizeProviderError(new Error('agentrouter_invalid_response_shape'),'agentrouter'),'agentrouter_invalid_response_shape');
+
+process.env.AGENTROUTER_BASE_URL='https://agentrouter.org';
+process.env.AGENTROUTER_API_KEY='agent-test';
+assert.equal(providerConfigSnapshot().agentrouter.base,'https://co.agentrouter.org','legacy AgentRouter website host must resolve to the documented API host');
+
+const savedFetch=globalThis.fetch,calls=[];
+try{
+  globalThis.fetch=async (url,opts={})=>{calls.push({url:String(url),body:JSON.parse(String(opts.body||'{}'))});return new Response(JSON.stringify({status:'ok'}),{status:200,headers:{'content-type':'application/json'}})};
+  const telemetry=[];
+  await assert.rejects(()=>completeJson({policy:'specialist_executor',role:'shape-test',onTelemetry:x=>telemetry.push(x),system:'Return JSON',user:'{}'}),error=>error?.message==='agentrouter_invalid_response_shape');
+  assert.equal(calls[0].url,'https://co.agentrouter.org/v1/chat/completions');
+  assert.equal(telemetry.at(-1)?.success,false,'HTTP 200 without model content must be a failed provider call');
+}finally{globalThis.fetch=savedFetch}
 
 console.log('provider-policy-reliability: PASS');
