@@ -50,13 +50,13 @@ for(const testCase of cases){
 // Lock the exact failure that triggered this suite: a rich venture brief must never become lead generation.
 const degradedFashionPlan=compileExecutionPlan('make a fashion brand');
 const degradedFashion=usefulFallback('make a fashion brand',degradedFashionPlan,{
-  reason:'organization_no_artifacts:tensormux_timeout,agentrouter_http_503',
+  reason:'organization_no_artifacts:tensormux_timeout,tensormux_http_503',
   publicEvidence:{ok:true,queries:['fashion market pricing competitors'],results:[{title:'Example captured source',url:'https://example.com/fashion',snippet:'Captured search input only.'}]},
-  roleTelemetry:[{success:false,provider:'tensormux',model:'glm-4-7-flash',failure:{code:'tensormux_timeout'},usage:{total_tokens:0}},{success:false,provider:'agentrouter',model:'glm-5.3',failure:{code:'agentrouter_http_503'},usage:{total_tokens:0}}],
+  roleTelemetry:[{success:false,provider:'tensormux',model:'glm-4-7-flash',failure:{code:'tensormux_timeout'},usage:{total_tokens:0}},{success:false,provider:'tensormux',model:'glm-specialist',failure:{code:'tensormux_http_503'},usage:{total_tokens:0}}],
   roleTelemetrySummary:{expectedRoles:4,completedRoles:0}
 });
 assert.equal(degradedFashion.degraded,true);
-assert.equal(degradedFashion.degradedReason,'organization_no_artifacts:tensormux_timeout,agentrouter_http_503');
+assert.equal(degradedFashion.degradedReason,'organization_no_artifacts:tensormux_timeout,tensormux_http_503');
 assert.equal(degradedFashion.roleTelemetry.length,2,'degraded candidate lost failed provider telemetry');
 assert.equal(degradedFashion.publicEvidence.results.length,1,'degraded candidate lost captured evidence receipts');
 assert.ok(degradedFashion.files.some(file=>file.name==='brand-brief.md'&&/Fewer pieces\. Stronger point of view\./.test(file.content)),'fashion fallback is not mission-specific');

@@ -7,10 +7,8 @@ try{
   process.env.TENSORMUX_API_KEY='test-key';
   process.env.TENSORMUX_MODEL='test-model';
   process.env.TENSORMUX_TIMEOUT_MS='60000';
-  process.env.AGENTROUTER_BASE_URL='https://agentrouter.test';
-  process.env.AGENTROUTER_API_KEY='agent-test-key';
-  process.env.AGENTROUTER_SPECIALIST_MODEL='glm-5.3';
-  process.env.AGENTROUTER_VERIFIER_MODEL='gpt-5.6-sol';
+  process.env.TENSORMUX_SPECIALIST_MODEL='specialist-model';
+  process.env.TENSORMUX_VERIFIER_MODEL='verifier-model';
   let seenSignal=null;
   globalThis.fetch=async (_url,opts={})=>{
     seenSignal=opts.signal;
@@ -21,11 +19,11 @@ try{
   assert.equal(out.value.ok,true);
   assert.ok(seenSignal instanceof AbortSignal);
   const gateway=await import(`../lib/model-gateway.mjs?provider-test=${Date.now()}`);
-  assert.equal(gateway.routeForPolicy('specialist_executor').provider,'agentrouter');
+  assert.equal(gateway.routeForPolicy('specialist_executor').provider,'tensormux');
   assert.equal(gateway.routeForPolicy('specialist_executor').strictProvider,true);
-  assert.equal(gateway.routeForPolicy('verifier').model,'gpt-5.6-sol');
-  assert.equal(gateway.sanitizeProviderError(Object.assign(Error('rate limited'),{status:429,provider:'agentrouter'})),'agentrouter_http_429');
-  assert.equal(gateway.sanitizeProviderError(Object.assign(Error('bad model'),{status:404,provider:'agentrouter',details:{error:'model not found'}})),'agentrouter_model_unavailable');
+  assert.equal(gateway.routeForPolicy('verifier').model,'verifier-model');
+  assert.equal(gateway.sanitizeProviderError(Object.assign(Error('rate limited'),{status:429,provider:'tensormux'})),'tensormux_http_429');
+  assert.equal(gateway.sanitizeProviderError(Object.assign(Error('bad model'),{status:404,provider:'tensormux',details:{error:'model not found'}})),'tensormux_model_unavailable');
   console.log('tensormux-timeout: PASS');
 } finally {
   globalThis.fetch=oldFetch;

@@ -5,8 +5,6 @@ delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 delete process.env.TENSORMUX_API_KEY;
 delete process.env.TENSORMUX_BASE_URL;
-delete process.env.AGENTROUTER_API_KEY;
-delete process.env.AGENTROUTER_BASE_URL;
 
 const {createValueMission,reviseValueMission,hydrateValueMission}=await import('../lib/mission-service.mjs');
 const {WorkerService}=await import('../lib/worker-service.mjs');
