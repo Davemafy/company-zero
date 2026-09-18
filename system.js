@@ -40,11 +40,14 @@ const goalText=()=>operating?.session?.data?.goal||mission()?.data?.goalContract
 const displayCompanyName=c=>c?.data?.name||c?.records?.find?.(x=>x.kind==='operating_session')?.data?.goal||c?.records?.find?.(x=>x.kind==='mission')?.data?.outcome||'Loading work…';
 const sentence=s=>String(s||'').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase());
 const humanError=e=>sentence(String(e?.message||e||'Request failed'));
+const readinessOf=a=>{if(!a)return null;const declared=a.data?.readiness;if(declared==='READY'||declared==='PARTIAL')return declared;return a.data?.claimVerification?.passed===true&&!a.data?.degraded?'READY':'PARTIAL'};
+const isReadyArtifact=a=>Boolean(a&&a.state==='ready'&&readinessOf(a)==='READY'&&!a.data?.degraded);
+const missionArtifacts=()=>currentRec('artifact').filter(x=>['ready','partial'].includes(x.state)).sort((a,b)=>Number(b.data?.deliverableVersion||1)-Number(a.data?.deliverableVersion||1)||String(b.created_at).localeCompare(String(a.created_at)));
 
 function statusModel(){
   const verification=latest('outcome_verification');
-  const persistedArtifact=rec('artifact').filter(x=>x.state==='ready').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]||null;
-  const artifactReadiness=persistedArtifact?.data?.readiness||(persistedArtifact?.data?.claimVerification?.passed===true?'READY':persistedArtifact?'PARTIAL':null);
+  const persistedArtifact=missionArtifacts()[0]||null;
+  const artifactReadiness=isReadyArtifact(persistedArtifact)?'READY':persistedArtifact?'PARTIAL':null;
   const request=currentRec('capability_access_request').find(x=>x.state==='open')||rec('capability_access_request').find(x=>x.state==='open');
   const approval=currentRec('approval_request').find(x=>['pending','waiting'].includes(x.state));
   const jobs=rec('job');
@@ -128,7 +131,7 @@ function updateRow(u){const icons={found:'branch',choice:'sparkle',team:'people'
 function deliverableSurface(){
   const contracts=rec('deliverable_contract').sort((a,b)=>Number(b.data?.latestVersion||b.data?.version||0)-Number(a.data?.latestVersion||a.data?.version||0));
   const contract=contracts[0];
-  const artifacts=rec('artifact').filter(x=>x.state==='ready').sort((a,b)=>Number(b.data?.deliverableVersion||1)-Number(a.data?.deliverableVersion||1)||String(b.created_at).localeCompare(String(a.created_at)));
+  const artifacts=missionArtifacts();
   const a=artifacts[0];
   const version=Number(a?.data?.deliverableVersion||contract?.data?.latestVersion||1);
   const title=contract?.data?.title?.replace(/ · V\d+$/,'')||goalText();
@@ -137,7 +140,7 @@ function deliverableSurface(){
     const history=artifacts.slice(1,4);
     const instant=a.data?.source==='instant-value'||a.data?.instantValue===true;
     const verified=a.data?.claimVerification?.passed===true||a.data?.qa?.claimVerified===true;
-    const ready=(a.data?.readiness==='READY'||(!a.data?.readiness&&verified))&&!a.data?.degraded;
+    const ready=isReadyArtifact(a);
     const stateLabel=ready?'READY':'PARTIAL';
     const eyebrow=instant?`FIRST VALUE · ${stateLabel}`:`VERSION ${version} · ${stateLabel}`;
     const note=ready?'A useful result passed structural and claim verification.':'Useful candidate work is preserved, but verification has not passed. It is not being promoted as READY.';
@@ -170,7 +173,7 @@ function work(){
   const s=statusModel(),need=needsYou(),updates=meaningfulUpdates(),stage=userStage(),rows=resultRows();
   const goal=goalText();
   const evidence=currentRec('world_fact').filter(x=>x.data?.classification==='EXTERNAL_OBSERVATION').length;
-  const artifactRecords=rec('artifact').filter(x=>['ready','partial'].includes(x.state));const artifacts=artifactRecords.length;const readyArtifacts=artifactRecords.filter(x=>x.data?.readiness==='READY'||x.data?.claimVerification?.passed===true).length;
+  const artifactRecords=missionArtifacts();const artifacts=artifactRecords.length;const readyArtifacts=artifactRecords.filter(isReadyArtifact).length;
   return `<div class="work-page premium-work"><header class="work-command"><div class="command-title"><button class="back-home" data-page="home" aria-label="Back to home">${icon('arrowLeft')}</button><div><span class="eyebrow">ACTIVE MISSION</span><h1>${esc(goal)}</h1></div></div><div class="command-meta"><span>${artifacts} artifact${artifacts===1?'':'s'}</span><span>${evidence} receipt${evidence===1?'':'s'}</span>${statusPill(s)}</div></header>
   <div class="mission-kpis"><div><span>NOW</span><strong>${esc(stage[0])}</strong></div><div><span>PROOF</span><strong>${evidence?`${evidence} grounded signal${evidence===1?'':'s'}`:'Awaiting evidence'}</strong></div><div><span>OUTPUT</span><strong>${readyArtifacts?`${readyArtifacts} ready`:artifacts?`${artifacts} candidate${artifacts===1?'':'s'}`:'Building V1'}</strong></div></div>
   <div class="mission-grid"><main class="mission-main">${need?needCard(need):''}${liveOutput(updates)}${deliverableSurface()}${rows.length?`<section class="result-card premium-result"><div><span class="eyebrow">${latest('outcome_verification')?.data?.outcomeAchieved?'VERIFIED OUTCOME':'OUTCOME STATUS'}</span><h2>${latest('outcome_verification')?.data?.outcomeAchieved?'Target achieved':'Not verified yet'}</h2></div><div class="result-grid">${rows.map(r=>`<div><span>${esc(r.name)}</span><strong>${r.hasObservation?esc(r.after):'No grounded observation yet'}</strong><small>${r.target!==undefined?`Target ${esc(r.target)}`:'Evidence required'}</small></div>`).join('')}</div><button class="text-link" data-page="results">Open evidence ledger ${icon('arrowRight')}</button></section>`:''}</main>
