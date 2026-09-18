@@ -35,14 +35,18 @@ assert.equal(sanitizeProviderError(new Error('agentrouter_invalid_response_shape
 
 process.env.AGENTROUTER_BASE_URL='https://agentrouter.org';
 process.env.AGENTROUTER_API_KEY='agent-test';
-assert.equal(providerConfigSnapshot().agentrouter.base,'https://co.agentrouter.org','legacy AgentRouter website host must resolve to the documented API host');
+assert.equal(providerConfigSnapshot().agentrouter.base,'https://agentrouter.org','project AgentRouter host must remain on the key-issuing gateway');
 
 const savedFetch=globalThis.fetch,calls=[];
 try{
-  globalThis.fetch=async (url,opts={})=>{calls.push({url:String(url),body:JSON.parse(String(opts.body||'{}'))});return new Response(JSON.stringify({status:'ok'}),{status:200,headers:{'content-type':'application/json'}})};
+  globalThis.fetch=async (url,opts={})=>{calls.push({url:String(url),headers:opts.headers,body:JSON.parse(String(opts.body||'{}'))});return new Response(JSON.stringify({status:'ok'}),{status:200,headers:{'content-type':'application/json'}})};
   const telemetry=[];
   await assert.rejects(()=>completeJson({policy:'specialist_executor',role:'shape-test',onTelemetry:x=>telemetry.push(x),system:'Return JSON',user:'{}'}),error=>error?.message==='agentrouter_invalid_response_shape');
-  assert.equal(calls[0].url,'https://co.agentrouter.org/v1/chat/completions');
+  assert.equal(calls[0].url,'https://agentrouter.org/v1/chat/completions');
+  assert.equal(calls[0].headers?.Originator,'codex_cli_rs');
+  assert.equal(calls[0].headers?.Version,'0.101.0');
+  assert.match(String(calls[0].headers?.['User-Agent']||''),/^codex_cli_rs\//);
+  assert.equal(calls[0].headers?.authorization,'Bearer agent-test');
   assert.equal(telemetry.at(-1)?.success,false,'HTTP 200 without model content must be a failed provider call');
 }finally{globalThis.fetch=savedFetch}
 
