@@ -49,4 +49,12 @@ try{
   assert.equal(calls[2].body?.response_format?.type,'json_object');
   await assert.rejects(()=>completeJson({policy:'verifier',provider:'openrouter',role:'bad-override',system:'Return JSON',user:'{}'}),error=>error?.message==='verifier_provider_override_forbidden');
 }finally{globalThis.fetch=savedFetch}
+process.env.PROVIDER_CIRCUIT_OPEN_MS='5000';
+let timeoutFetches=0;
+globalThis.fetch=async ()=>{timeoutFetches+=1;throw Object.assign(new Error('openrouter_timeout'),{status:504})};
+try{
+  await assert.rejects(()=>completeJson({policy:'specialist_executor',role:'circuit-first',timeoutMs:1000,system:'Return JSON',user:'{}'}),error=>error?.message==='openrouter_timeout');
+  await assert.rejects(()=>completeJson({policy:'specialist_executor',role:'circuit-second',timeoutMs:1000,system:'Return JSON',user:'{}'}),error=>error?.message==='openrouter_circuit_open');
+  assert.equal(timeoutFetches,1,'open circuit must avoid a second network call');
+}finally{globalThis.fetch=savedFetch}
 console.log('provider-policy-reliability: PASS');

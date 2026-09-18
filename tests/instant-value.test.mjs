@@ -34,7 +34,7 @@ try{
   process.env.ROLE_ROUTINE_TIMEOUT_MS='8000';
   process.env.ROLE_SPECIALIST_TIMEOUT_MS='8000';
 
-  let verifierCalls=0,tensorCalls=0,gatewayCalls=0,mode='repair';
+  let verifierCalls=0,tensorCalls=0,gatewayCalls=0,mode='repair',repairOpenrouterFailures=0,repairGeminiCalls=0;
   globalThis.fetch=async (url,opts={})=>{
     const body=JSON.parse(String(opts.body||'{}')),system=String(body?.messages?.[0]?.content||'');
     if(String(url).includes('tensormux.test')){
@@ -62,7 +62,8 @@ try{
       if(body.model==='openrouter/free'){
         if(mode==='roles-fail')return new Response(JSON.stringify({error:'specialist unavailable'}),{status:503,headers:{'content-type':'application/json'}});
         if(mode==='empty-roles')return new Response(JSON.stringify({id:'empty-specialist',choices:[{message:{content:JSON.stringify({summary:'Still no publishable artifact',findings:[],files:[]})}}]}),{status:200,headers:{'content-type':'application/json'}});
-        if(/bounded claim repair/i.test(system)){
+        if(/single bounded claim repair|bounded claim repair/i.test(system)){
+          if(mode==='repair-fallback'){repairOpenrouterFailures+=1;return new Response(JSON.stringify({error:'specialist timeout'}),{status:504,headers:{'content-type':'application/json'}})}
           const content=('# Repaired launch brief\n\nProposed target: reach 10 customers. This is explicitly an assumption to validate, not a measured result. The rest of the useful draft remains intact. ').repeat(3);
           return new Response(JSON.stringify({id:'repair',choices:[{message:{content:JSON.stringify({title:'Repaired launch brief',summary:'Unsupported claim relabelled as an assumption.',files:[{name:'launch-brief.md',mimeType:'text/markdown',content}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
         }
@@ -71,6 +72,11 @@ try{
     }
     if(String(url).includes('gemini.test')){
       gatewayCalls+=1;
+      if(/single bounded claim repair|bounded claim repair/i.test(system)){
+        repairGeminiCalls+=1;
+        const content=('# Repaired launch brief\n\nProposed target: reach 10 customers. This is explicitly an assumption to validate, not a measured result. The rest of the useful draft remains intact. ').repeat(3);
+        return new Response(JSON.stringify({id:'gemini-repair',model:'gemini-3.5-flash-lite',choices:[{message:{content:JSON.stringify({title:'Repaired launch brief',summary:'Fallback repair relabelled the claim.',files:[{name:'launch-brief.md',mimeType:'text/markdown',content}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
+      }
       return new Response(JSON.stringify({id:'gemini-frontier',model:'gemini-3.5-flash-lite',choices:[{message:{content:JSON.stringify({objective:'Recovered plan',workUnits:['Draft'],expectedOutputs:['launch-brief.md'],requiresFreshEvidence:false,reason:'fallback'})}}]}),{status:200,headers:{'content-type':'application/json'}});
     }
     throw Error(`unexpected_test_url:${url}`);
@@ -82,6 +88,14 @@ try{
   assert.equal(verifierCalls,2,'repair path must verify exactly before and after the single repair');
   assert.ok(gatewayCalls>=3,'verification + repair must use separate specialist and verifier providers');
   assert.ok(repaired.files.some(file=>file.name==='launch-brief.md'),'repair must preserve a useful artifact');
+
+  mode='repair-fallback';verifierCalls=0;gatewayCalls=0;repairOpenrouterFailures=0;repairGeminiCalls=0;
+  const fallbackRepaired=await buildInstantValue({request:'Draft a one-page launch brief with a headline, message, sections and a proposed customer target.'});
+  assert.equal(fallbackRepaired.claimVerification?.passed,true,'provider failover inside the one repair pass must still be reverified');
+  assert.equal(fallbackRepaired.claimVerification?.repaired,true);
+  assert.equal(repairOpenrouterFailures,1,'repair must try specialist transport once');
+  assert.equal(repairGeminiCalls,1,'repair must fail over to Gemini without a second semantic repair pass');
+  assert.equal(verifierCalls,2,'repair failover must still verify exactly before and after one repair');
 
   mode='fail';verifierCalls=0;gatewayCalls=0;
   const partial=await buildInstantValue({request:'Draft a one-page launch brief with a headline, message and sections.'});

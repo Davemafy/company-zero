@@ -42,6 +42,24 @@ try{
   Object.assign(process.env,oldEnv);
 }
 
+const labelEnv={...process.env},labelFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-label.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-label';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  globalThis.fetch=async (_url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));
+    return new Response(JSON.stringify({id:'verify-label',model:body.model,choices:[{message:{content:JSON.stringify({passed:true,summary:'labelled assumption',claims:[{id:'c2',claim:'Average selling price is $35,000',file:'plan.json',status:'ASSUMPTION',reason:'listed in assumptions',support:[]}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?plural-label=${Date.now()}`);
+  const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'plan.json',mimeType:'application/json',content:'{"assumptions":["Average selling price is $35,000"]}'}]},publicEvidence:null});
+  assert.equal(verdict.passed,true,'plural assumptions key must count as an explicit local label');
+}finally{
+  globalThis.fetch=labelFetch;
+  for(const k of Object.keys(process.env))if(!(k in labelEnv))delete process.env[k];
+  Object.assign(process.env,labelEnv);
+}
+
 const system=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
 assert.ok(!system.includes('verified/grounded output'),'UI must not combine source receipts with verified outputs');
 console.log('truth-contract-hardening: PASS');
