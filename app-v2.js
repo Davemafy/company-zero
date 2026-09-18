@@ -21,8 +21,9 @@ function isNeedsInput(a=latestArtifact()){return a?.data?.degradedReason==='miss
 function artifactState(a=latestArtifact()){
   if(!a)return {label:'Working',tone:'partial',now:'Researching and producing the first result'};
   if(isNeedsInput(a))return {label:'Needs one detail',tone:'needs',now:'Waiting for one useful detail'};
-  if(a.data?.degraded)return {label:'Partial',tone:'partial',now:'A partial result is ready'};
-  return {label:'Ready',tone:'ready',now:'Result ready'};
+  const readiness=a.data?.readiness||(a.data?.claimVerification?.passed===true?'READY':'PARTIAL');
+  if(readiness!=='READY')return {label:'Partial',tone:'partial',now:'Useful candidate work is preserved; verification is pending or failed'};
+  return {label:'Ready',tone:'ready',now:'Verified result ready'};
 }
 function toast(message,bad=false){const el=$('#toast');if(!el)return;el.textContent=message;el.className=`toast show${bad?' error':''}`;setTimeout(()=>el.classList.remove('show'),2800)}
 
