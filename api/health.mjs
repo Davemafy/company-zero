@@ -8,6 +8,7 @@ export default function handler(req,res){
     platform:'vercel',
     storage:storageMode(),
     tensormuxConfigured:providers.tensormux.configured,
+    aiGatewayConfigured:providers.vercelGateway.configured,
     providers,
     neatlogsConfigured:Boolean(process.env.NEATLOGS_WRITE_KEY||process.env.NEATLOGS_API_KEY),
     zyteConfigured:Boolean(process.env.ZYTE_API_KEY),
