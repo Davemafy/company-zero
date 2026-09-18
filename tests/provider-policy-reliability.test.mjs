@@ -8,7 +8,7 @@ process.env.OPENROUTER_API_KEY='openrouter-test';
 process.env.OPENROUTER_SPECIALIST_MODEL='openrouter/free';
 process.env.GEMINI_BASE_URL='https://gemini.test/v1beta/openai';
 process.env.GEMINI_API_KEY='gemini-test';
-process.env.GEMINI_FRONTIER_MODEL='gemini-3.8-flash';
+process.env.GEMINI_RECOVERY_MODEL='gemini-3.5-flash-lite';
 process.env.GROQ_BASE_URL='https://groq.test/openai/v1';
 process.env.GROQ_API_KEY='groq-test';
 process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
@@ -16,7 +16,7 @@ const {routeForPolicy,providerConfigured,providerConfigSnapshot,sanitizeProvider
 const {policyForRole}=await import('../lib/role-runtime.mjs');
 assert.deepEqual(routeForPolicy('routine_executor'),{policy:'routine_executor',provider:'tensormux',model:'glm-routine',strictProvider:false});
 assert.deepEqual(routeForPolicy('specialist_executor'),{policy:'specialist_executor',provider:'openrouter',model:'openrouter/free',strictProvider:true});
-assert.deepEqual(routeForPolicy('frontier_escalation'),{policy:'frontier_escalation',provider:'gemini',model:'gemini-3.8-flash',strictProvider:true});
+assert.deepEqual(routeForPolicy('frontier_escalation'),{policy:'frontier_escalation',provider:'gemini',model:'gemini-3.5-flash-lite',strictProvider:true});
 assert.deepEqual(routeForPolicy('verifier'),{policy:'verifier',provider:'groq',model:'openai/gpt-oss-120b',strictProvider:true});
 for(const provider of ['tensormux','openrouter','gemini','groq'])assert.equal(providerConfigured(provider),true);
 assert.equal(providerConfigured('unsupported'),false);
@@ -43,7 +43,7 @@ try{
   assert.equal(calls[0].body?.model,'openrouter/free');
   assert.equal(calls[0].body?.provider?.require_parameters,true);
   assert.equal(calls[1].url,'https://gemini.test/v1beta/openai/chat/completions');
-  assert.equal(calls[1].body?.model,'gemini-3.8-flash');
+  assert.equal(calls[1].body?.model,'gemini-3.5-flash-lite');
   assert.equal(calls[2].url,'https://groq.test/openai/v1/chat/completions');
   assert.equal(calls[2].body?.model,'openai/gpt-oss-120b');
   assert.equal(calls[2].body?.response_format?.type,'json_object');

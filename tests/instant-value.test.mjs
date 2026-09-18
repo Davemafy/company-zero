@@ -27,7 +27,7 @@ try{
   process.env.OPENROUTER_SPECIALIST_MODEL='openrouter/free';
   process.env.GEMINI_BASE_URL='https://gemini.test/v1beta/openai';
   process.env.GEMINI_API_KEY='gemini-test-key';
-  process.env.GEMINI_FRONTIER_MODEL='gemini-3.8-flash';
+  process.env.GEMINI_RECOVERY_MODEL='gemini-3.5-flash-lite';
   process.env.GROQ_BASE_URL='https://groq.test/openai/v1';
   process.env.GROQ_API_KEY='groq-test-key';
   process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
@@ -71,7 +71,7 @@ try{
     }
     if(String(url).includes('gemini.test')){
       gatewayCalls+=1;
-      return new Response(JSON.stringify({id:'gemini-frontier',model:'gemini-3.8-flash',choices:[{message:{content:JSON.stringify({objective:'Recovered plan',workUnits:['Draft'],expectedOutputs:['launch-brief.md'],requiresFreshEvidence:false,reason:'fallback'})}}]}),{status:200,headers:{'content-type':'application/json'}});
+      return new Response(JSON.stringify({id:'gemini-frontier',model:'gemini-3.5-flash-lite',choices:[{message:{content:JSON.stringify({objective:'Recovered plan',workUnits:['Draft'],expectedOutputs:['launch-brief.md'],requiresFreshEvidence:false,reason:'fallback'})}}]}),{status:200,headers:{'content-type':'application/json'}});
     }
     throw Error(`unexpected_test_url:${url}`);
   };
