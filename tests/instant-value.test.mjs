@@ -29,20 +29,22 @@ try{
   process.env.ROLE_ROUTINE_TIMEOUT_MS='8000';
   process.env.ROLE_SPECIALIST_TIMEOUT_MS='8000';
 
-  let verifierCalls=0,mode='repair';
+  let verifierCalls=0,tensorCalls=0,mode='repair';
   globalThis.fetch=async (url,opts={})=>{
     const body=JSON.parse(String(opts.body||'{}'));
     const system=String(body?.messages?.[0]?.content||'');
     if(String(url).includes('tensormux.test')){
+      tensorCalls+=1;
       if(/mission planner/i.test(system)){
         return new Response(JSON.stringify({id:'planner',choices:[{message:{content:JSON.stringify({objective:'Produce a usable launch brief',workUnits:['Draft the launch brief','Check usability'],expectedOutputs:['launch-brief.md'],requiresFreshEvidence:false,reason:'Direct artifact task'})}}],usage:{prompt_tokens:10,completion_tokens:10,total_tokens:20}}),{status:200,headers:{'content-type':'application/json'}});
       }
+      if(mode==='roles-fail')return new Response(JSON.stringify({error:'routine executor unavailable'}),{status:503,headers:{'content-type':'application/json'}});
       const role=(body?.messages?.[1]?.content&&JSON.parse(body.messages[1].content)?.role)||'execution';
       const content=(`# Draft launch brief\n\n${role} produced concrete content for the requested launch brief. This is a proposed working draft, not an external fact. It includes a clear headline, audience, message, sections, next action, and validation note. `).repeat(3);
       return new Response(JSON.stringify({id:`role-${role}`,choices:[{message:{content:JSON.stringify({summary:`${role} completed`,findings:['usable draft'],files:[{name:`${role}.md`,mimeType:'text/markdown',content}]})}}],usage:{prompt_tokens:20,completion_tokens:30,total_tokens:50}}),{status:200,headers:{'content-type':'application/json'}});
     }
     if(String(url).includes('agentrouter.test')){
-      if(mode==='fail')return new Response(JSON.stringify({error:'temporary upstream failure'}),{status:503,headers:{'content-type':'application/json'}});
+      if(mode==='fail'||mode==='roles-fail')return new Response(JSON.stringify({error:'temporary upstream failure'}),{status:503,headers:{'content-type':'application/json'}});
       if(body.model==='glm-5.3'){
         const content=('# Repaired launch brief\n\nProposed target: reach 10 customers. This is explicitly an assumption to validate, not a measured result. The rest of the useful draft remains intact. ').repeat(3);
         return new Response(JSON.stringify({id:'repair',choices:[{message:{content:JSON.stringify({title:'Repaired launch brief',summary:'Unsupported claim relabelled as an assumption.',files:[{name:'launch-brief.md',mimeType:'text/markdown',content}]})}}],usage:{prompt_tokens:25,completion_tokens:25,total_tokens:50}}),{status:200,headers:{'content-type':'application/json'}});
@@ -69,6 +71,12 @@ try{
   assert.equal(partial.degraded,true,'verifier outage must produce truthful PARTIAL state');
   assert.ok(partial.files.length>0,'verifier outage must preserve useful candidate files');
   assert.ok(!partial.files.some(file=>file.name==='venture-contract.md'),'verifier outage must not discard work into a generic venture fallback');
+
+  mode='roles-fail';verifierCalls=0;tensorCalls=0;
+  const noArtifacts=await buildInstantValue({request:'Draft a one-page launch brief with a headline, message and sections.'});
+  assert.equal(tensorCalls,3,'failed role DAG must not fall through to a fourth legacy monolithic TensorMux executor call');
+  assert.equal(noArtifacts.degraded,true);
+  assert.ok(noArtifacts.files.length>0,'no-artifact organization failure must still return a truthful fallback');
 } finally {
   globalThis.fetch=savedFetch;
   for(const key of Object.keys(process.env))if(!(key in savedEnv))delete process.env[key];
