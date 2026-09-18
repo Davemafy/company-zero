@@ -43,6 +43,8 @@ const humanError=e=>sentence(String(e?.message||e||'Request failed'));
 
 function statusModel(){
   const verification=latest('outcome_verification');
+  const persistedArtifact=rec('artifact').filter(x=>x.state==='ready').sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)))[0]||null;
+  const artifactReadiness=persistedArtifact?.data?.readiness||(persistedArtifact?.data?.claimVerification?.passed===true?'READY':persistedArtifact?'PARTIAL':null);
   const request=currentRec('capability_access_request').find(x=>x.state==='open')||rec('capability_access_request').find(x=>x.state==='open');
   const approval=currentRec('approval_request').find(x=>['pending','waiting'].includes(x.state));
   const jobs=rec('job');
@@ -51,6 +53,8 @@ function statusModel(){
   const lastProgress=progressRecords.map(x=>Date.parse(x.updated_at||x.created_at||0)).filter(Number.isFinite).sort((a,b)=>b-a)[0]||0;
   const stale=lastProgress&&Date.now()-lastProgress>90000&&!verification?.data?.outcomeAchieved&&!approval&&!request&&!['failed','blocked','completed'].includes(job?.state);
   if(verification?.data?.outcomeAchieved)return {key:'done',label:'Done',tone:'good',detail:'The result has been verified.'};
+  if(artifactReadiness==='PARTIAL')return {key:'partial',label:'Partial',tone:'warn',detail:'Useful candidate work exists, but claim verification has not passed.'};
+  if(artifactReadiness==='READY')return {key:'ready',label:'Ready',tone:'good',detail:'The persisted result passed claim verification.'};
   if(approval||request)return {key:'needs',label:'Needs you',tone:'warn',detail:'One step needs your access or approval.'};
   if(['failed','blocked'].includes(job?.state))return {key:'needs',label:'Needs you',tone:'warn',detail:'Work is paused at a real boundary.'};
   if(lastHydrationError)return {key:'recovering',label:'Recovering',tone:'warn',detail:'The app is reconnecting to the persisted work state.'};
