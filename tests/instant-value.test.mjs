@@ -22,11 +22,15 @@ try{
   process.env.TENSORMUX_API_KEY='tensor-test-key';
   process.env.TENSORMUX_PLANNER_MODEL='glm-4-7-flash';
   process.env.TENSORMUX_EXECUTION_MODEL='glm-4-7-flash';
-  process.env.AI_GATEWAY_BASE_URL='https://ai-gateway.vercel.test';
-  process.env.AI_GATEWAY_API_KEY='gateway-test-key';
-  process.env.AI_GATEWAY_SPECIALIST_MODEL='anthropic/claude-sonnet-4.6';
-  process.env.AI_GATEWAY_FRONTIER_MODEL='anthropic/claude-opus-5';
-  process.env.AI_GATEWAY_VERIFIER_MODEL='openai/gpt-5.6-sol';
+  process.env.OPENROUTER_BASE_URL='https://openrouter.test/api/v1';
+  process.env.OPENROUTER_API_KEY='openrouter-test-key';
+  process.env.OPENROUTER_SPECIALIST_MODEL='openrouter/free';
+  process.env.GEMINI_BASE_URL='https://gemini.test/v1beta/openai';
+  process.env.GEMINI_API_KEY='gemini-test-key';
+  process.env.GEMINI_FRONTIER_MODEL='gemini-3.8-flash';
+  process.env.GROQ_BASE_URL='https://groq.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-test-key';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
   process.env.ROLE_ROUTINE_TIMEOUT_MS='8000';
   process.env.ROLE_SPECIALIST_TIMEOUT_MS='8000';
 
@@ -41,9 +45,9 @@ try{
       const role=(body?.messages?.[1]?.content&&JSON.parse(body.messages[1].content)?.role)||'execution',content=(`# Draft launch brief\n\n${role} produced concrete content for the requested launch brief. This is a proposed working draft, not an external fact. It includes a clear headline, audience, message, sections, next action, and validation note. `).repeat(3);
       return new Response(JSON.stringify({id:`role-${role}`,choices:[{message:{content:JSON.stringify({summary:`${role} completed`,findings:['usable draft'],files:[{name:`${role}.md`,mimeType:'text/markdown',content}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
     }
-    if(String(url).includes('ai-gateway.vercel.test')){
+    if(String(url).includes('groq.test')){
       gatewayCalls+=1;
-      if(body.model==='openai/gpt-5.6-sol'){
+      if(body.model==='openai/gpt-oss-120b'){
         if(mode==='fail')return new Response(JSON.stringify({error:'temporary verifier failure'}),{status:503,headers:{'content-type':'application/json'}});
         verifierCalls+=1;
         const verdict=verifierCalls===1
@@ -63,7 +67,11 @@ try{
           return new Response(JSON.stringify({id:'repair',choices:[{message:{content:JSON.stringify({title:'Repaired launch brief',summary:'Unsupported claim relabelled as an assumption.',files:[{name:'launch-brief.md',mimeType:'text/markdown',content}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
         }
       }
-      throw Error(`unexpected_gateway_model:${body.model}`);
+      throw Error(`unexpected_openrouter_model:${body.model}`);
+    }
+    if(String(url).includes('gemini.test')){
+      gatewayCalls+=1;
+      return new Response(JSON.stringify({id:'gemini-frontier',model:'gemini-3.8-flash',choices:[{message:{content:JSON.stringify({objective:'Recovered plan',workUnits:['Draft'],expectedOutputs:['launch-brief.md'],requiresFreshEvidence:false,reason:'fallback'})}}]}),{status:200,headers:{'content-type':'application/json'}});
     }
     throw Error(`unexpected_test_url:${url}`);
   };
