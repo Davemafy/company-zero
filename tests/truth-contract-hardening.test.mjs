@@ -168,6 +168,33 @@ try{
   Object.assign(process.env,rateEnv);
 }
 
+const nameEnv={...process.env},nameFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-name.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-name';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  globalThis.fetch=async (_url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));
+    return new Response(JSON.stringify({id:'verify-name',model:body.model,choices:[{message:{content:JSON.stringify({
+      passed:false,summary:'name looks unsupported',
+      claims:[{id:'n1',claim:'Company Name: Apex EV',file:'venture.md',status:'UNSUPPORTED',reason:'No external evidence',support:[]}]
+    })}}]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?company-name-proposal=${Date.now()}`);
+  const verdict=await verifyArtifactClaims({
+    request:'make a car company',
+    plan,
+    result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'# Venture Plan\n- **Company Name:** Apex EV'}]},
+    publicEvidence:null
+  });
+  assert.equal(verdict.passed,true,'a name generated inside a company_creation mission is inherently a proposal, not an external fact');
+  assert.equal(verdict.claims[0].status,'ASSUMPTION');
+}finally{
+  globalThis.fetch=nameFetch;
+  for(const k of Object.keys(process.env))if(!(k in nameEnv))delete process.env[k];
+  Object.assign(process.env,nameEnv);
+}
+
 const system=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
 assert.ok(!system.includes('verified/grounded output'),'UI must not combine source receipts with verified outputs');
 console.log('truth-contract-hardening: PASS');
