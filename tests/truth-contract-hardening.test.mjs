@@ -60,6 +60,35 @@ try{
   Object.assign(process.env,labelEnv);
 }
 
+const disagreementEnv={...process.env},disagreementFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-disagreement.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-disagreement';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  globalThis.fetch=async (_url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));
+    return new Response(JSON.stringify({id:'verify-disagreement',model:body.model,choices:[{message:{content:JSON.stringify({
+      passed:false,
+      summary:'model incorrectly rejected explicit planning labels',
+      claims:[
+        {id:'p1',claim:'Company Name: Apex Micro-Mobility',file:'venture.md',status:'UNSUPPORTED',reason:'No external evidence and not labeled as assumption',support:[]},
+        {id:'p2',claim:'Vehicle Base Price: $15,000',file:'venture.md',status:'UNSUPPORTED',reason:'No external evidence and not labeled as assumption',support:[]},
+        {id:'p3',claim:'Seed Capital Requirement: $5,000,000',file:'venture.md',status:'UNSUPPORTED',reason:'No external evidence and not labeled as assumption',support:[]}
+      ]
+    })}}]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?deterministic-labels=${Date.now()}`);
+  const content='# Venture\n- **Company Name:** Apex Micro-Mobility (Proposed)\n- **Vehicle Base Price:** $15,000 (Target)\n- **Seed Capital Requirement:** $5,000,000 (Estimate)';
+  const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'venture.md',mimeType:'text/markdown',content}]},publicEvidence:null});
+  assert.equal(verdict.passed,true,'explicit local planning labels must override a verifier misclassification');
+  assert.equal(verdict.rejected.length,0);
+  assert.deepEqual(verdict.claims.map(x=>x.status),['ASSUMPTION','ASSUMPTION','ASSUMPTION']);
+}finally{
+  globalThis.fetch=disagreementFetch;
+  for(const k of Object.keys(process.env))if(!(k in disagreementEnv))delete process.env[k];
+  Object.assign(process.env,disagreementEnv);
+}
+
 const system=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
 assert.ok(!system.includes('verified/grounded output'),'UI must not combine source receipts with verified outputs');
 console.log('truth-contract-hardening: PASS');
