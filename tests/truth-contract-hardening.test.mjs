@@ -144,6 +144,30 @@ try{
   Object.assign(process.env,snakeEnv);
 }
 
+const rateEnv={...process.env},rateFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-rate-fallback.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-rate-fallback';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  process.env.GROQ_VERIFIER_FALLBACK_MODEL='openai/gpt-oss-20b';
+  const seen=[];
+  globalThis.fetch=async (_url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));seen.push(body);
+    if(body.model==='openai/gpt-oss-120b')return new Response(JSON.stringify({error:{message:'rate limited'}}),{status:429,headers:{'content-type':'application/json'}});
+    return new Response(JSON.stringify({id:'verify-rate-fallback',model:body.model,choices:[{message:{content:JSON.stringify({passed:true,summary:'fallback verified',claims:[{id:'rr1',claim:'Vehicle Base Price: $15,000',file:'venture.md',status:'ASSUMPTION',reason:'explicit target',support:[]}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?groq-rate-fallback=${Date.now()}`);
+  const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'- **Vehicle Base Price:** $15,000 (Target)'}]},publicEvidence:null});
+  assert.equal(verdict.passed,true,'Groq 120b rate limit must retry strict verification on Groq 20b');
+  assert.equal(verdict.model,'openai/gpt-oss-20b');
+  assert.deepEqual(seen.map(x=>x.model),['openai/gpt-oss-120b','openai/gpt-oss-20b']);
+  assert.ok(seen.every(x=>x.response_format?.type==='json_schema'&&x.response_format?.json_schema?.strict===true));
+}finally{
+  globalThis.fetch=rateFetch;
+  for(const k of Object.keys(process.env))if(!(k in rateEnv))delete process.env[k];
+  Object.assign(process.env,rateEnv);
+}
+
 const system=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
 assert.ok(!system.includes('verified/grounded output'),'UI must not combine source receipts with verified outputs');
 console.log('truth-contract-hardening: PASS');

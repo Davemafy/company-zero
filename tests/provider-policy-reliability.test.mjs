@@ -62,4 +62,16 @@ try{
   await assert.rejects(()=>completeJson({policy:'specialist_executor',role:'circuit-second',timeoutMs:1000,system:'Return JSON',user:'{}'}),error=>error?.message==='openrouter_circuit_open');
   assert.equal(timeoutFetches,1,'open circuit must avoid a second network call');
 }finally{globalThis.fetch=savedFetch}
+let groqRouteCalls=0;
+globalThis.fetch=async (_url,opts={})=>{
+  const body=JSON.parse(String(opts.body||'{}'));groqRouteCalls+=1;
+  if(body.model==='openai/gpt-oss-120b')return new Response(JSON.stringify({error:'rate limit'}),{status:429,headers:{'content-type':'application/json'}});
+  return new Response(JSON.stringify({id:'groq-20b-ok',model:body.model,choices:[{message:{content:'{"ok":true}'}}]}),{status:200,headers:{'content-type':'application/json'}});
+};
+try{
+  await assert.rejects(()=>completeJson({policy:'verifier',role:'groq-rate-primary',model:'openai/gpt-oss-120b',system:'Return JSON',user:'{}'}),error=>error?.message==='groq_http_429');
+  const fallback=await completeJson({policy:'verifier',role:'groq-rate-fallback',model:'openai/gpt-oss-20b',system:'Return JSON',user:'{}'});
+  assert.equal(fallback.json.ok,true,'a model-local Groq 429 must not open the fallback model circuit');
+  assert.equal(groqRouteCalls,2);
+}finally{globalThis.fetch=savedFetch}
 console.log('provider-policy-reliability: PASS');
