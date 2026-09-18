@@ -25,7 +25,7 @@ for(const testCase of cases){
   assert.equal(plan.organization.mission,testCase.kind,`${testCase.name}: organization mission drifted`);
   assert.ok(plan.workUnits.length>=3,`${testCase.name}: plan is too shallow`);
   assert.ok(plan.expectedOutputs.length>=1,`${testCase.name}: no expected outputs`);
-  if(testCase.evidence)assert.equal(plan.requiresFreshEvidence,true,`${testCase.name}: should require fresh evidence`);
+  if(testCase.evidence||testCase.kind==='company_creation'||testCase.kind==='sales_strategy')assert.equal(plan.requiresFreshEvidence,true,`${testCase.name}: claim-heavy missions should require fresh evidence`);
   if(testCase.kind!=='lead_generation')assert.ok(!plan.organization.functions.includes('prospect_research'),`${testCase.name}: incorrectly routed to prospecting`);
   for(const key of testCase.required||[])assert.ok(plan.contract.required.includes(key),`${testCase.name}: missing contract key ${key}`);
 
@@ -55,6 +55,7 @@ assert.ok(!breadPlan.workUnits.some(unit=>/prospect/i.test(unit.title)),'bread p
 // and polished hallucinated luxury facts must not receive Evaluator: PASS with zero receipts.
 const umbrellaPlan=compileExecutionPlan('sell umbrellas to rich people');
 assert.equal(umbrellaPlan.kind,'sales_strategy','umbrella mission fell back to a generic organization');
+assert.equal(umbrellaPlan.requiresFreshEvidence,true,'sales strategy must ground claim-heavy work before verification');
 assert.deepEqual(umbrellaPlan.organization.functions,['market_strategy','offer_design','channel_strategy','economics','verification']);
 const umbrellaGarbage={files:[
   {name:'customer_profile.md',content:`# High-Net-Worth Customer Profile\nTarget Segment: Ultra-High-Net-Worth Individuals. Net Worth: $1M - $50M+. Geography: NYC, London, Hong Kong, Dubai. Customers increasingly value sustainability and have high propensity for gifting.`},
