@@ -51,7 +51,11 @@ try{
           :{passed:true,summary:'all material claims are truthful',claims:[{id:'c1',claim:'Proposed target: reach 10 customers',file:'launch-brief.md',status:'ASSUMPTION',reason:'explicitly labelled',support:[]}]};
         return new Response(JSON.stringify({id:`verify-${verifierCalls}`,choices:[{message:{content:JSON.stringify(verdict)}}],usage:{prompt_tokens:15,completion_tokens:15,total_tokens:30}}),{status:200,headers:{'content-type':'application/json'}});
       }
-      if(body.model==='anthropic/claude-sonnet-4.6'){
+      throw Error(`unexpected_groq_model:${body.model}`);
+    }
+    if(String(url).includes('openrouter.test')){
+      gatewayCalls+=1;
+      if(body.model==='openrouter/free'){
         if(mode==='roles-fail')return new Response(JSON.stringify({error:'specialist unavailable'}),{status:503,headers:{'content-type':'application/json'}});
         if(mode==='empty-roles')return new Response(JSON.stringify({id:'empty-specialist',choices:[{message:{content:JSON.stringify({summary:'Still no publishable artifact',findings:[],files:[]})}}]}),{status:200,headers:{'content-type':'application/json'}});
         if(/bounded claim repair/i.test(system)){
@@ -68,7 +72,7 @@ try{
   assert.equal(repaired.claimVerification?.passed,true,'repaired candidate must be reverified before READY eligibility');
   assert.equal(repaired.claimVerification?.repaired,true,'one bounded repair pass should be recorded');
   assert.equal(verifierCalls,2,'repair path must verify exactly before and after the single repair');
-  assert.ok(gatewayCalls>=3,'verification + repair must use the separate gateway route');
+  assert.ok(gatewayCalls>=3,'verification + repair must use separate specialist and verifier providers');
   assert.ok(repaired.files.some(file=>file.name==='launch-brief.md'),'repair must preserve a useful artifact');
 
   mode='fail';verifierCalls=0;gatewayCalls=0;
@@ -81,7 +85,7 @@ try{
   mode='roles-fail';verifierCalls=0;tensorCalls=0;gatewayCalls=0;
   const noArtifacts=await buildInstantValue({request:'Draft a one-page launch brief with a headline, message and sections.'});
   assert.ok(tensorCalls>=2,'failed role DAG should exercise planner and routine execution');
-  assert.ok(gatewayCalls>=1,'routine failure must attempt the genuinely separate gateway specialist route');
+  assert.ok(gatewayCalls>=1,'routine failure must attempt the genuinely separate OpenRouter specialist route');
   assert.equal(noArtifacts.degraded,true);
   assert.ok(noArtifacts.files.length>0,'no-artifact organization failure must still return a truthful fallback');
 
