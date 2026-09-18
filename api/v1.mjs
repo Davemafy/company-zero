@@ -2,7 +2,7 @@ import {storageMode,get,list} from '../lib/store.mjs';
 import {createCompany,companies,hydrateCompany,registerProvider,synthesize,launch,submitJob,submitEvent,diagnose,promotion,control,approvalDecision,approvals,rollback,DomainError} from '../lib/platform-v1.mjs';
 import {scheduleExperiment} from '../lib/experiment-service.mjs';
 import {startOperatingSession,advanceOperatingSession,hydrateOperatingSession,recordObservation,converse} from '../lib/universal.mjs';
-import {createValueMission,createValueMissionWithArtifact,materializeFirstValue,hydrateValueMission,hydrateValueCompany,reviseValueMission} from '../lib/mission-service.mjs';
+import {createValueMission,createValueMissionWithArtifact,materializeFirstValue,scheduleValueFirst,hydrateValueMission,hydrateValueCompany,reviseValueMission} from '../lib/mission-service.mjs';
 import {listWorkerHeartbeats} from '../lib/queue.mjs';
 import {hydrateOutcomeControl} from '../lib/outcome-control.mjs';
 import {ensureBrowserSession,assertCompanyAccess,canAccessCompany} from '../lib/session-auth.mjs';
@@ -45,7 +45,7 @@ export default async function handler(req,res){
     if(m==='GET'&&p[0]==='companies'&&p.length===2)return send(res,200,company?.data?.mode==='thin_product_runtime'?await hydrateValueCompany(company):await hydrateCompany(company));
     if(m==='GET'&&p[2]==='sessions'&&p[3])return send(res,200,company?.data?.mode==='thin_product_runtime'?await hydrateValueMission(c,p[3]):await hydrateOperatingSession(c,p[3]));
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='advance')return send(res,202,await advanceOperatingSession(c,p[3]));
-    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='instant-value')return send(res,201,{artifact:await materializeFirstValue(c,p[3])});
+    if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='instant-value'){const scheduled=await scheduleValueFirst(c,p[3]);return send(res,scheduled.alreadyMaterialized?200:202,scheduled.alreadyMaterialized?{artifact:scheduled.artifact}:{jobId:scheduled.job?.id||null,queueId:scheduled.queue?.id||null,status:'queued'});}
     if(m==='POST'&&p[2]==='sessions'&&p[3]&&p[4]==='messages')return send(res,201,company?.data?.mode==='thin_product_runtime'?await reviseValueMission(c,p[3],body.message):await converse(c,p[3],body.message));
     if(m==='POST'&&p[2]==='observations')return send(res,201,await recordObservation(c,body));
     if(m==='GET'&&p[2]==='jobs'&&p.length===3)return send(res,200,{items:await list({companyId:c,kind:'job',limit:500})});
