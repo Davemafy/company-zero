@@ -14,7 +14,10 @@ assert.ok(Date.now()-started<1500,'first artifact should not wait on background 
 assert.equal(first.artifact.state,'ready');
 assert.equal(first.artifact.data.deliverableVersion,1);
 assert.ok(first.artifact.data.files?.[0]?.content?.length>120,'first artifact must contain visible useful content');
-assert.equal(first.operating.session.data.currentStage,'ready');
+assert.equal(first.artifact.data.readiness,'PARTIAL','unverified fallback must never be labelled READY');
+assert.equal(first.artifact.data.qa?.claimVerified,false);
+assert.equal(first.operating.session.data.state,'partial');
+assert.equal(first.operating.session.data.currentStage,'producing_progress');
 assert.ok(first.operating.company.records.some(x=>x.kind==='artifact'&&x.id===first.artifact.id),'artifact must be present in the initial UI snapshot');
 
 const revised=await reviseValueMission(first.operating.company.id,first.operating.session.id,'make the result more specific and add a qualification checklist');
