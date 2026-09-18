@@ -112,6 +112,38 @@ try{
   Object.assign(process.env,retryEnv);
 }
 
+const snakeEnv={...process.env},snakeFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-snake.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-snake';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  globalThis.fetch=async (_url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));
+    return new Response(JSON.stringify({id:'verify-snake',model:body.model,choices:[{message:{content:JSON.stringify({
+      passed:false,summary:'snake case labels missed',
+      claims:[
+        {id:'s1',claim:'Base model price estimate $25,000',file:'financial.json',status:'UNSUPPORTED',reason:'numeric claim without explicit label',support:[]},
+        {id:'s2',claim:'Target gross margin percentage 20%',file:'financial.json',status:'UNSUPPORTED',reason:'numeric claim without explicit label',support:[]},
+        {id:'s3',claim:'Target Year 2 units sold 2,000',file:'financial.json',status:'UNSUPPORTED',reason:'numeric claim without explicit label',support:[]}
+      ]
+    })}}]}),{status:200,headers:{'content-type':'application/json'}});
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?snake-labels=${Date.now()}`);
+  const content=JSON.stringify({
+    base_model_price_estimate:25000,
+    target_gross_margin_percentage:20,
+    target_year_2_units_sold:2000
+  },null,2);
+  const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'financial.json',mimeType:'application/json',content}]},publicEvidence:null});
+  assert.equal(verdict.passed,true,'snake_case estimate/target keys must count as explicit local planning labels');
+  assert.equal(verdict.rejected.length,0);
+  assert.deepEqual(verdict.claims.map(x=>x.status),['ASSUMPTION','ASSUMPTION','ASSUMPTION']);
+}finally{
+  globalThis.fetch=snakeFetch;
+  for(const k of Object.keys(process.env))if(!(k in snakeEnv))delete process.env[k];
+  Object.assign(process.env,snakeEnv);
+}
+
 const system=fs.readFileSync(new URL('../system.js',import.meta.url),'utf8');
 assert.ok(!system.includes('verified/grounded output'),'UI must not combine source receipts with verified outputs');
 console.log('truth-contract-hardening: PASS');
