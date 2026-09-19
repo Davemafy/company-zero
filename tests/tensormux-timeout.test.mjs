@@ -21,8 +21,10 @@ try{
   assert.equal(out.value.ok,true);
   assert.ok(seenSignal instanceof AbortSignal);
   const gateway=await import(`../lib/model-gateway.mjs?provider-test=${Date.now()}`);
-  assert.equal(gateway.routeForPolicy('specialist_executor').provider,'openrouter');
-  assert.equal(gateway.routeForPolicy('frontier_escalation').provider,'gemini');
+  assert.equal(gateway.routeForPolicy('cheap_planner').provider,'gemini');
+  assert.equal(gateway.routeForPolicy('routine_executor').provider,'gemini');
+  assert.equal(gateway.routeForPolicy('specialist_executor').provider,'gemini');
+  assert.equal(gateway.routeForPolicy('frontier_escalation').provider,'openrouter');
   assert.equal(gateway.routeForPolicy('verifier').provider,'groq');
   assert.equal(gateway.routeForPolicy('verifier').model,'openai/gpt-oss-120b');
   assert.equal(gateway.sanitizeProviderError(Object.assign(Error('rate limited'),{status:429,provider:'openrouter'})),'openrouter_http_429');

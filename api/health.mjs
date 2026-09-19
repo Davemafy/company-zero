@@ -7,6 +7,8 @@ export default function handler(req,res){
     ok:true,
     platform:'vercel',
     storage:storageMode(),
+    aiRuntimeConfigured:providers.gemini.configured,
+    primaryRuntime:'gemini',
     tensormuxConfigured:providers.tensormux.configured,
     openrouterConfigured:providers.openrouter.configured,
     geminiConfigured:providers.gemini.configured,
@@ -18,7 +20,7 @@ export default function handler(req,res){
     pageSpeedConfigured:['1','true','yes','on'].includes(String(process.env.PAGESPEED_ENABLED||'').toLowerCase()),
     githubRepositoryConfigured:Boolean((process.env.GITHUB_TOKEN||process.env.GH_TOKEN)&&process.env.GITHUB_REPOSITORY),
     vercelDeploymentConfigured:Boolean(process.env.VERCEL_TOKEN&&process.env.VERCEL_PROJECT_ID),
-    model:process.env.TENSORMUX_MODEL||null,
+    model:providers.gemini.primaryModel||null,
     time:new Date().toISOString()
   });
 }
