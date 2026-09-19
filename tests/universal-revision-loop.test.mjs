@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {invokeStudioCapability} from '../lib/studio.mjs';
 import fs from 'node:fs/promises';
 
-process.env.TENSORMUX_BASE_URL='https://tensormux.test/v1';
-process.env.TENSORMUX_API_KEY='test-key';
-process.env.TENSORMUX_MODEL='test-model';
+process.env.GEMINI_BASE_URL='https://gemini.test/v1beta/openai';
+process.env.GEMINI_API_KEY='test-key';
+process.env.GEMINI_PRIMARY_MODEL='gemini-3.5-flash-lite';
 process.env.STUDIO_MAX_REVISIONS='2';
 
 const request='turn this rough idea into something useful before lunch';
