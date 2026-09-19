@@ -187,7 +187,7 @@ try{
     result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'# Venture Plan\n- **Company Name:** Apex EV'}]},
     publicEvidence:null
   });
-  assert.equal(verdict.passed,true,'a name generated inside a company_creation mission is inherently a proposal, not an external fact');
+  assert.equal(verdict.passed,true,`a name generated inside a company_creation mission is inherently a proposal, not an external fact; verdict=${JSON.stringify(verdict)}`);
   assert.equal(verdict.claims[0].status,'ASSUMPTION');
 }finally{
   globalThis.fetch=nameFetch;
