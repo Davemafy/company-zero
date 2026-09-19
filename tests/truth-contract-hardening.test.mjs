@@ -26,6 +26,18 @@ const foodEvidence=await searchPublicWeb('consumer packaged food snack CPG brand
 assert.equal(foodEvidence.results.length,1,'food-brand research must reject restaurant-directory noise');
 assert.match(foodEvidence.results[0].title,/CPG snack brands/i);
 
+const nigeriaRss=`<?xml version="1.0"?><rss><channel>
+<item><title>100 Business Ideas in Nigeria</title><link>https://example.com/nigeria-business</link><description>Nigeria entrepreneurship opportunities for small businesses and startups.</description></item>
+<item><title>What is entrepreneurship?</title><link>https://example.com/entrepreneurship-definition</link><description>General entrepreneurship definition and startup education.</description></item>
+</channel></rss>`;
+const nigeriaFetch=async url=>String(url).includes('bing.com')
+  ?new Response(nigeriaRss,{status:200,headers:{'content-type':'application/rss+xml'}})
+  :new Response('<html></html>',{status:200,headers:{'content-type':'text/html'}});
+const nigeriaEvidence=await searchPublicWeb('entrepreneurship ideas in Nigeria',{limit:8,fetchImpl:nigeriaFetch,timeoutMs:500});
+assert.ok(nigeriaEvidence.results.length>=1);
+assert.ok(nigeriaEvidence.results.every(x=>/nigeria/i.test(`${x.title} ${x.snippet} ${x.url}`)),'localized opportunity evidence must preserve geographic relevance');
+assert.equal(nigeriaEvidence.results.some(x=>/definition/i.test(x.url)),false,'generic entrepreneurship pages must not satisfy Nigeria-specific research');
+
 const plan=compileExecutionPlan('make a car company');
 const incomplete={files:[{name:'venture.md',content:('# Proposed venture\nCustomer positioning launch validation offer. ').repeat(8)}],roleTelemetrySummary:{expectedRoles:4,completedRoles:1}};
 const qa=qualityCheck(incomplete,plan);
