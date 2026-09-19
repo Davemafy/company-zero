@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {invokeStudioCapability} from '../lib/studio.mjs';
 
-process.env.TENSORMUX_BASE_URL='https://tensormux.test/v1';
-process.env.TENSORMUX_API_KEY='test-key';
-process.env.TENSORMUX_MODEL='test-model';
+process.env.GEMINI_BASE_URL='https://gemini.test/v1beta/openai';
+process.env.GEMINI_API_KEY='test-key';
+process.env.GEMINI_PRIMARY_MODEL='gemini-3.5-flash-lite';
 const realFetch=globalThis.fetch;
 let calls=0;
 globalThis.fetch=async(_url,opts)=>{
@@ -19,10 +19,10 @@ try{
   const plan=await invokeStudioCapability({internalAction:'studio.plan',inputSchema:{type:'object'},outputSchema:{type:'object'}},{task:'Build a warm restaurant website'},{mission:{outcome:'Build a restaurant website'}});
   assert.equal(plan.output.deliverableType,'website');
   const build=await invokeStudioCapability({internalAction:'studio.build',inputSchema:{type:'object'},outputSchema:{type:'object'}},plan.output,{mission:{outcome:'Build a restaurant website'}});
-  assert.equal(build.output.builder,'tensormux-universal');
+  assert.equal(build.output.builder,'gemini-universal');
   assert.equal(build.output.artifact.files.length,3);
   const review=await invokeStudioCapability({internalAction:'studio.review',inputSchema:{type:'object'},outputSchema:{type:'object'}},build.output,{mission:{outcome:'Build a restaurant website'}});
   assert.equal(review.output.qa.passed,true);
   assert.equal(calls,3);
-  console.log('studio tensormux path: PASS');
+  console.log('studio gemini path: PASS');
 }finally{globalThis.fetch=realFetch}
