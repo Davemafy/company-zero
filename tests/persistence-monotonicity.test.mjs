@@ -14,7 +14,7 @@ const partialArtifact={id:partialArtifactId,company_id:companyId,kind:'artifact'
 
 await Promise.all([
   syncArtifactMetadata({contractId,sessionId,artifact:readyArtifact,jobId:'ready-job',evidenceCount:0,ready:true}),
-  (async()=>{await new Promise(r=>setTimeout(r,0));return syncArtifactMetadata({contractId,sessionId,artifact:partialArtifact,jobId:'partial-job',evidenceCount:0,ready:false)})()
+  (async()=>{await new Promise(r=>setTimeout(r,0));return syncArtifactMetadata({contractId,sessionId,artifact:partialArtifact,jobId:'partial-job',evidenceCount:0,ready:false})})()
 ]);
 
 const finalContract=await get(contractId),finalSession=await get(sessionId);
