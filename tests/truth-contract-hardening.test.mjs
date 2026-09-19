@@ -15,6 +15,17 @@ assert.equal(evidence.results.length,1,'irrelevant Burger King result must not s
 assert.match(evidence.results[0].title,/Automotive/i);
 assert.ok(evidence.results[0].relevanceScore>0);
 
+const foodRss=`<?xml version="1.0"?><rss><channel>
+<item><title>CPG snack brands expand grocery retail distribution</title><link>https://example.com/cpg-snacks</link><description>Packaged snack brand retail pricing and grocery distribution analysis.</description></item>
+<item><title>THE 10 BEST Restaurants in Holyoke</title><link>https://example.com/holyoke-restaurants</link><description>Dining reviews, restaurants, sushi, BBQ and local food.</description></item>
+</channel></rss>`;
+const foodFetch=async url=>String(url).includes('bing.com')
+  ?new Response(foodRss,{status:200,headers:{'content-type':'application/rss+xml'}})
+  :new Response('<html></html>',{status:200,headers:{'content-type':'text/html'}});
+const foodEvidence=await searchPublicWeb('consumer packaged food snack CPG brand retail pricing competitors grocery',{limit:8,fetchImpl:foodFetch,timeoutMs:500});
+assert.equal(foodEvidence.results.length,1,'food-brand research must reject restaurant-directory noise');
+assert.match(foodEvidence.results[0].title,/CPG snack brands/i);
+
 const plan=compileExecutionPlan('make a car company');
 const incomplete={files:[{name:'venture.md',content:('# Proposed venture\nCustomer positioning launch validation offer. ').repeat(8)}],roleTelemetrySummary:{expectedRoles:4,completedRoles:1}};
 const qa=qualityCheck(incomplete,plan);
@@ -98,14 +109,14 @@ try{
   const seen=[];
   globalThis.fetch=async (_url,opts={})=>{
     const body=JSON.parse(String(opts.body||'{}'));seen.push(body);
-    if(body.model==='openai/gpt-oss-120b')return new Response(JSON.stringify({error:{message:'generated JSON failed'}}),{status:400,headers:{'content-type':'application/json'}});
-    return new Response(JSON.stringify({id:'verify-fallback',model:body.model,choices:[{message:{content:JSON.stringify({passed:true,summary:'strict fallback ok',claims:[{id:'r1',claim:'Vehicle Base Price: $15,000',file:'venture.md',status:'ASSUMPTION',reason:'explicit target',support:[]}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
+    if(body.response_format?.type==='json_schema')return new Response(JSON.stringify({error:{message:'strict schema rejected'}}),{status:400,headers:{'content-type':'application/json'}});
+    return new Response(JSON.stringify({id:'verify-json-object',model:body.model,choices:[{message:{content:JSON.stringify({passed:true,summary:'compatibility JSON verified',claims:[{id:'r1',claim:'Vehicle Base Price: $15,000',file:'venture.md',status:'ASSUMPTION',reason:'explicit target',support:[]}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
   };
-  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?groq-strict-retry=${Date.now()}`);
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?groq-format-retry=${Date.now()}`);
   const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'- **Vehicle Base Price:** $15,000 (Target)'}]},publicEvidence:null});
-  assert.equal(verdict.passed,true,'Groq 120b 400 must retry strict verification on independent Groq fallback model');
-  assert.deepEqual(seen.map(x=>x.model),['openai/gpt-oss-120b','openai/gpt-oss-20b']);
-  assert.ok(seen.every(x=>x.response_format?.type==='json_schema'&&x.response_format?.json_schema?.strict===true));
+  assert.equal(verdict.passed,true,'Groq schema 400 must retry the same verifier in JSON Object mode');
+  assert.deepEqual(seen.map(x=>[x.model,x.response_format?.type]),[['openai/gpt-oss-120b','json_schema'],['openai/gpt-oss-120b','json_object']]);
+  assert.ok(seen.every(x=>x.include_reasoning===false),'GPT-OSS verifier calls should suppress reasoning payloads');
 }finally{
   globalThis.fetch=retryFetch;
   for(const k of Object.keys(process.env))if(!(k in retryEnv))delete process.env[k];
