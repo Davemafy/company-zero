@@ -105,7 +105,6 @@ try{
   process.env.GROQ_BASE_URL='https://groq-retry.test/openai/v1';
   process.env.GROQ_API_KEY='groq-retry';
   process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
-  process.env.GROQ_VERIFIER_FALLBACK_MODEL='openai/gpt-oss-20b';
   const seen=[];
   globalThis.fetch=async (_url,opts={})=>{
     const body=JSON.parse(String(opts.body||'{}'));seen.push(body);
@@ -116,11 +115,43 @@ try{
   const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'- **Vehicle Base Price:** $15,000 (Target)'}]},publicEvidence:null});
   assert.equal(verdict.passed,true,'Groq schema 400 must retry the same verifier in JSON Object mode');
   assert.deepEqual(seen.map(x=>[x.model,x.response_format?.type]),[['openai/gpt-oss-120b','json_schema'],['openai/gpt-oss-120b','json_object']]);
-  assert.ok(seen.every(x=>x.include_reasoning===false),'GPT-OSS verifier calls should suppress reasoning payloads');
+  assert.ok(seen.every(x=>x.reasoning_format==='hidden'),'GPT-OSS verifier calls must use hidden reasoning for JSON modes');
+  assert.ok(seen.every(x=>x.reasoning_effort==='low'),'GPT-OSS verifier calls should use low reasoning effort');
+  assert.ok(seen.every(x=>x.include_reasoning===undefined),'reasoning_format and include_reasoning must not be mixed');
 }finally{
   globalThis.fetch=retryFetch;
   for(const k of Object.keys(process.env))if(!(k in retryEnv))delete process.env[k];
   Object.assign(process.env,retryEnv);
+}
+
+
+const providerFallbackEnv={...process.env},providerFallbackFetch=globalThis.fetch;
+try{
+  process.env.GROQ_BASE_URL='https://groq-provider-fallback.test/openai/v1';
+  process.env.GROQ_API_KEY='groq-provider-fallback';
+  process.env.GROQ_VERIFIER_MODEL='openai/gpt-oss-120b';
+  process.env.OPENROUTER_BASE_URL='https://openrouter-verifier-fallback.test/api/v1';
+  process.env.OPENROUTER_API_KEY='openrouter-verifier-fallback';
+  process.env.OPENROUTER_VERIFIER_FALLBACK_MODEL='openrouter/free';
+  const seen=[];
+  globalThis.fetch=async (url,opts={})=>{
+    const body=JSON.parse(String(opts.body||'{}'));seen.push({url:String(url),body});
+    if(String(url).includes('groq-provider-fallback.test'))return new Response(JSON.stringify({error:{message:'rate limited'}}),{status:429,headers:{'content-type':'application/json'}});
+    if(String(url).includes('openrouter-verifier-fallback.test'))return new Response(JSON.stringify({id:'verify-openrouter',model:body.model,choices:[{message:{content:JSON.stringify({passed:true,summary:'independent fallback verified',claims:[{id:'pf1',claim:'Vehicle Base Price: $15,000',file:'venture.md',status:'ASSUMPTION',reason:'explicit target',support:[]}]})}}]}),{status:200,headers:{'content-type':'application/json'}});
+    throw Error('unexpected verifier URL '+url);
+  };
+  const {verifyArtifactClaims}=await import(`../lib/claim-verifier.mjs?provider-fallback=${Date.now()}`);
+  const verdict=await verifyArtifactClaims({request:'make a car company',plan,result:{files:[{name:'venture.md',mimeType:'text/markdown',content:'- **Vehicle Base Price:** $15,000 (Target)'}]},publicEvidence:null});
+  assert.equal(verdict.passed,true,'Groq 429 must fall back to an independent provider');
+  assert.equal(verdict.provider,'openrouter');
+  assert.equal(seen.length,2,'429 path should not waste a second Groq model call');
+  assert.match(seen[0].url,/groq-provider-fallback/);
+  assert.match(seen[1].url,/openrouter-verifier-fallback/);
+  assert.equal(seen[1].body.response_format?.type,'json_object');
+}finally{
+  globalThis.fetch=providerFallbackFetch;
+  for(const k of Object.keys(process.env))if(!(k in providerFallbackEnv))delete process.env[k];
+  Object.assign(process.env,providerFallbackEnv);
 }
 
 const snakeEnv={...process.env},snakeFetch=globalThis.fetch;
